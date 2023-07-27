@@ -32,7 +32,9 @@ void main(void) {
         ld b, (hl)
         dec hl
 
+        ld sp, #0x6000 // move stack to right below handler
     idleloop:
+        ei
         halt
         jp idleloop
     __endasm;
@@ -41,6 +43,7 @@ void main(void) {
     // to make things happen. The VSYNC interrupt should be used instead
     // At 4 MHz, this is 5120 cycles
     __asm
+        // Lazy hack to place handler in memory available to BIOS bank
         .rept 0x6000
         nop
         .endm
@@ -50,24 +53,26 @@ void main(void) {
         push de         // 11 clocks
         push hl         // 11 clocks
 
-        ld de, #211     // 10 clocks
-    irq1loop:           // 5040, 24 clocks per iteration
+        ld de, #210     // 10 clocks
+    irq1loop:           // 24 clocks per iteration, multiply by DE
         dec de          // 6 clocks
         ld a, d         // 4 clocks
         or e            // 4 clocks
         jp nz, irq1loop // 10 clocks
-        
+
         ld de, #0       // 10 clocks (nop)
         nop             // 4 clocks
 
     // Program for beam racing image generation
     #include "occ1/program.asm"
-        
+
+        //TODO ld a, (#0x2C00) // Clear interrupt
+
         pop hl          // 10 clocks
         pop de          // 10 clocks
         pop af          // 10 clocks
-        ei // Enable interrupts
-        ret // Return from interrupt
+        ei              // Enable interrupts
+        ret             // Return from interrupt
     __endasm;
 
     // Wait for key
