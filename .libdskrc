@@ -1,0 +1,12 @@
+[osb1sssd]
+description = OSB1 Osborne 1 - SSSD 48 tpi 5.25" - 256 x 10
+sides = alt
+cylinders = 40
+heads = 1
+sectors = 10
+secbase = 1
+secsize = 256
+datarate = SD
+rwgap = 0x2a
+fmtgap = 0x52
+fm = Y
