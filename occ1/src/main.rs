@@ -137,7 +137,29 @@ fn main() {
                 byte = closest_opt.unwrap().0;
             }
 
-            let c = patterns[pattern_offset + byte].iter().next().unwrap();
+            // This prefers characters like ' ' with lots of blank lines on unused lines
+            // This helps with adjusting timing.
+            let mut blankest_opt = None;
+            for c in patterns[pattern_offset + byte].iter() {
+                let mut blank_rows = 0;
+                for row in 0..10 {
+                    let row_byte = char_rom[row * 128 + *c as usize];
+                    if row_byte == 0 {
+                        blank_rows += 1;
+                    }
+                }
+
+                blankest_opt = Some(match blankest_opt.take() {
+                    Some((prev_c, prev_blank_rows)) => if blank_rows > prev_blank_rows {
+                        (c, blank_rows)
+                    } else {
+                        (prev_c, prev_blank_rows)
+                    },
+                    None => (c, blank_rows)
+                });
+            }
+
+            let c = blankest_opt.unwrap().0;
             println!("{}, {}: 0x{:02X} = {:?}", row, group_i, byte, c);
 
             writeln!(asm, "ld (hl), #0x{:02X} // cycle {}", *c as u8, cycles);
