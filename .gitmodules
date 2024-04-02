@@ -1,0 +1,4 @@
+[submodule "iz-cpm"]
+	path = iz-cpm
+	url = https://github.com/jackpot51/iz-cpm.git
+	branch = master

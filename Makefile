@@ -35,5 +35,5 @@ mame: build/example.imd
 	mame osborne1 -debug -rompath roms -floppydisk1 cpm22 -floppydisk2 $<
 
 run: build/physics.com
-	cargo build --release --manifest-path ../Cargo.toml
-	../target/release/iz-cpm --slow $<
+	cargo build --release --manifest-path iz-cpm/Cargo.toml
+	iz-cpm/target/release/iz-cpm --slow $<
