@@ -32,7 +32,7 @@ clean:
 	rm -rf build
 
 mame: build/example.imd
-	mame osborne1 -debug -rompath roms -floppydisk1 cpm22 -floppydisk2 $<
+	mame osborne1 -window -rompath roms -floppydisk1 cpm22 -floppydisk2 $<
 
 run: build/physics.com
 	cargo build --release --manifest-path iz-cpm/Cargo.toml
