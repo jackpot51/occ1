@@ -35,6 +35,8 @@ pub fn run<T>(device: &cpal::Device, config: &cpal::StreamConfig)
 where
     T: SizedSample + FromSample<f32>,
 {
+    let freq = std::env::args().nth(1).unwrap_or_default().parse::<f32>().unwrap_or_default();
+    let millis = std::env::args().nth(2).unwrap_or_default().parse::<u64>().unwrap_or(1000);
     let sample_rate = config.sample_rate.0 as f32;
     let channels = config.channels as usize;
 
@@ -44,7 +46,11 @@ where
         sample_clock = (sample_clock + 1.0) % sample_rate;
         //(sample_clock * 440.0 * 2.0 * std::f32::consts::PI / sample_rate).sin()
         if (sample_clock * 15600.0 / sample_rate) % 10.0 < 5.0 {
-            1.0
+            if (sample_clock * freq * 10.0 / sample_rate) % 10.0 < 5.0 {
+                1.0
+            } else {
+                0.0
+            }
         } else {
             0.0
         }
@@ -62,7 +68,7 @@ where
     ).unwrap();
     stream.play().unwrap();
 
-    std::thread::sleep(std::time::Duration::from_millis(1000));
+    std::thread::sleep(std::time::Duration::from_millis(millis));
 }
 
 fn write_data<T>(output: &mut [T], channels: usize, next_sample: &mut dyn FnMut() -> f32)

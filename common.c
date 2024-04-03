@@ -1,17 +1,4 @@
-#include <stdint.h>
-
-#define COLS 52
-#define ROWS 24
-#define VRAM 0xF000
-
-void main(void);
-
-void __at(0x100) start(void) __naked {
-    __asm
-    ld sp, #0x4000  // Set stack pointer to 16 KiB
-    jp _main        // Jump to main function
-    __endasm;
-}
+#include "common.h"
 
 uint16_t bdos(uint8_t func, uint16_t param) __naked {
     // Use parameters
@@ -75,14 +62,6 @@ void cursor_position(uint8_t x, uint8_t y) {
     //TODO: ensure x <= 80
     putchar(x + 32);
 }
-
-// OSBORNE 1: 4 MHz, runs delay loop in 24 clocks
-// Run emulator at 4 Mhz and 6 clocks per instruction to match!
-#define CLOCKS_PER_S 4000000
-#define CLOCKS_PER_LOOP 24
-#define LOOPS_PER_S (CLOCKS_PER_S / CLOCKS_PER_LOOP)
-#define FRAMERATE 60
-#define LOOPS_PER_FRAME (LOOPS_PER_S / FRAMERATE)
 
 void delay_frame(void) __naked {
     __asm

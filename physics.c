@@ -1,4 +1,4 @@
-#include "common.c"
+#include "common.h"
 
 #define BOX_LEFT 0
 #define BOX_RIGHT 51

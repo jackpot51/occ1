@@ -1,20 +1,34 @@
+# Memory Map
+# COM files start running at 0x100
+# Data is placed at 0x2000 (TODO: does this actually work?)
+# Optional I/O code is placed at 0x4000 (where bank 2 shadow starts)
+# Stack is placed at 0x8000
+
+CC=sdcc \
+	-mz80 \
+	--code-loc 0x108 \
+	--data-loc 0x2000 \
+	--stack-loc 0x8000 \
+	--no-std-crt0
+
 all: build/example.imd
 
 build/%.com: build/%.ihx
 	objcopy -Iihex -Obinary $< $@
 
-build/%.ihx: %.c occ1/program.asm
+build/%.rel: %.c
 	mkdir -p build
-	sdcc \
-		-mz80 \
-		--code-loc 0x100 \
-		--data-loc 0x2000 \
-		--stack-loc 0x4000 \
-		--no-std-crt0 \
-		-o $@ \
-		$<
+	$(CC) -c -o $@ $<
 
-build/example.img: build/game.com build/occ1demo.com build/physics.com
+build/%.ihx: %.c build/start.rel build/common.rel occ1/program.asm
+	mkdir -p build
+	$(CC) -Wl-b_START=0x100 -o $@ build/start.rel build/common.rel $<
+
+build/beep.ihx: beep.c build/start.rel build/common.rel
+	mkdir -p build
+	$(CC) -Wl-b_START=0x100 -Wl-b_SHADOW=0x4000 -o $@ build/start.rel build/common.rel $<
+
+build/example.img: build/beep.com build/game.com build/occ1demo.com build/physics.com
 	rm -f $@.partial
 	env HOME=$(PWD) dskform -type raw -format osb1sssd $@.partial
 	mkfs.cpm -f osb1sssd $@.partial

@@ -1,0 +1,22 @@
+#include <stdint.h>
+
+#define COLS 52
+#define ROWS 24
+#define VRAM 0xF000
+
+void exit(void);
+char getchar(void);
+void putchar(char c);
+void puts(const char * s);
+void clear_screen(void);
+void cursor_position(uint8_t x, uint8_t y);
+
+// OSBORNE 1: 4 MHz, runs delay loop in 24 clocks
+// Run emulator at 4 Mhz and 6 clocks per instruction to match!
+#define CLOCKS_PER_S 4000000
+#define CLOCKS_PER_LOOP 24
+#define LOOPS_PER_S (CLOCKS_PER_S / CLOCKS_PER_LOOP)
+#define FRAMERATE 60
+#define LOOPS_PER_FRAME (LOOPS_PER_S / FRAMERATE)
+
+void delay_frame(void);

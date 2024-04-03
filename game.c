@@ -1,4 +1,4 @@
-#include "common.c"
+#include "common.h"
 
 struct Player {
     int16_t x;
