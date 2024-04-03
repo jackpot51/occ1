@@ -14,7 +14,7 @@ build/%.ihx: %.c occ1/program.asm
 		-o $@ \
 		$<
 
-build/example.img: build/occ1demo.com build/physics.com
+build/example.img: build/game.com build/occ1demo.com build/physics.com
 	rm -f $@.partial
 	env HOME=$(PWD) dskform -type raw -format osb1sssd $@.partial
 	mkfs.cpm -f osb1sssd $@.partial

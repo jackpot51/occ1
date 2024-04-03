@@ -1,5 +1,9 @@
 #include <stdint.h>
 
+#define COLS 52
+#define ROWS 24
+#define VRAM 0xF000
+
 void main(void);
 
 void __at(0x100) start(void) __naked {

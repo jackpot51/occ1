@@ -21,8 +21,7 @@ fn print_string(string: &str, char_rom: &[u8]) {
 }
 
 fn main() {
-    let home_dir = env::home_dir().expect("failed to get home directory");
-    let char_rom_path = home_dir.join("mame/roms/osborne1/7a3007-00.ud15");
+    let char_rom_path = "../roms/osborne1/7a3007-00.ud15";
     let char_rom = fs::read(&char_rom_path).expect("failed to read character ROM");
 
     let mut patterns = vec![collections::BTreeSet::new(); 10 * 256];
