@@ -19,7 +19,7 @@ build/%.rel: %.c
 	mkdir -p build
 	$(CC) -c -o $@ $<
 
-build/%.ihx: %.c build/start.rel build/common.rel occ1/program.asm
+build/%.ihx: %.c build/start.rel build/common.rel
 	mkdir -p build
 	$(CC) -Wl-b_START=0x100 --code-loc 0x108 -o $@ build/start.rel build/common.rel $<
 
@@ -27,7 +27,7 @@ build/beep.ihx: beep.c build/start.rel build/common.rel
 	mkdir -p build
 	$(CC) -Wl-b_START=0x100 --code-loc 0x4000 -o $@ build/start.rel build/common.rel $<
 
-build/image.ihx: image.c build/start.rel build/common.rel
+build/image.ihx: image.c build/start.rel build/common.rel occ1/program.asm
 	mkdir -p build
 	$(CC) -Wl-b_START=0x100 --code-loc 0x4000 -o $@ build/start.rel build/common.rel $<
 
