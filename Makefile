@@ -10,9 +10,13 @@ CC=sdcc \
 	--stack-loc 0x8000 \
 	--no-std-crt0
 
+# For example, -debug
+MAMEFLAGS?=
+
+# Single sided single density
 FORMAT=osb1sssd
 
-all: build/example.imd build/system.imd
+all: build/user.imd build/system.imd
 
 build/%.com: build/%.ihx
 	objcopy -Iihex -Obinary $< $@
@@ -33,7 +37,14 @@ build/image.ihx: image.c build/start.rel build/common.rel occ1/program.asm
 	mkdir -p build
 	$(CC) -Wl-b_START=0x100 --code-loc 0x4000 -o $@ build/start.rel build/common.rel $<
 
-build/example.img: build/beep.com build/game.com build/image.com build/physics.com
+build/system.img: roms/osborne1/os1syss.td0
+	mkdir -p build
+	rm -f $@.partial
+	env HOME=$(PWD) dsktrans -itype tele -format $(FORMAT) -otype raw $< $@.partial
+	cpmrm -f $(FORMAT) $@.partial autost.com
+	mv $@.partial $@
+
+build/user.img: build/beep.com build/game.com build/image.com build/physics.com
 	rm -f $@.partial
 	env HOME=$(PWD) dskform -type raw -format $(FORMAT) $@.partial
 	mkfs.cpm -f $(FORMAT) $@.partial
@@ -42,19 +53,12 @@ build/example.img: build/beep.com build/game.com build/image.com build/physics.c
 	done
 	mv $@.partial $@
 
-build/example.imd: build/example.img
-	rm -f $@.partial
-	env HOME=$(PWD) dsktrans -itype raw -format $(FORMAT) -otype imd $< $@.partial
+build/%.img: build/%.com build/system.img
+	cp -v build/system.img $@.partial
+	cpmcp -f $(FORMAT) $@.partial $< 0:autost.com
 	mv $@.partial $@
 
-build/system.img: roms/osborne1/os1syss.td0
-	mkdir -p build
-	rm -f $@.partial
-	env HOME=$(PWD) dsktrans -itype tele -format $(FORMAT) -otype raw $< $@.partial
-	cpmrm -f $(FORMAT) $@.partial autost.com
-	mv $@.partial $@
-
-build/system.imd: build/system.img
+build/%.imd: build/%.img
 	rm -f $@.partial
 	env HOME=$(PWD) dsktrans -itype raw -format $(FORMAT) -otype imd $< $@.partial
 	mv $@.partial $@
@@ -62,12 +66,8 @@ build/system.imd: build/system.img
 clean:
 	rm -rf build
 
-mame: build/example.imd build/system.imd
-	mame osborne1 -window -rompath roms -floppydisk1 build/system.imd -floppydisk2 $<
+mame: build/user.imd build/system.imd
+	mame osborne1 $(MAMEFLAGS) -window -rompath roms -floppydisk1 build/system.imd -floppydisk2 $<
 
-mame_debug: build/example.imd build/system.imd
-	mame osborne1 -debug -window -rompath roms -floppydisk1 build/system.imd -floppydisk2 $<
-
-run: build/physics.com
-	cargo build --release --manifest-path iz-cpm/Cargo.toml
-	iz-cpm/target/release/iz-cpm --slow $<
+mame_%: build/%.imd
+	mame osborne1 $(MAMEFLAGS) -window -rompath roms -floppydisk1 $<
