@@ -57,7 +57,7 @@ fn main() {
     const CELL_WIDTH: usize = 8;
     const CELL_HEIGHT: usize = 10;
     const SCALE_X: usize = 1; // 4 to remove artifacts, 1 to increase apparent resolution
-    const SCALE_Y: usize = 2; // Multiply this by 256 cycles for character swapping time
+    const SCALE_Y: usize = 1; // Multiply this by 256 cycles for character swapping time
     const WIDTH: usize = COLS * CELL_WIDTH / SCALE_X;
     const HEIGHT: usize = ROWS * CELL_HEIGHT / SCALE_Y;
     let img_path = env::args().nth(1).unwrap_or("icon.png".to_string());
