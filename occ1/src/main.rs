@@ -53,7 +53,7 @@ fn main() {
 
     use image::{self, imageops::*, GenericImageView, Luma};
     const COLS: usize = 17; // 52 is maximum, adjust for cycles
-    const ROWS: usize = 17; // 24 is maximum
+    const ROWS: usize = 24; // 24 is maximum
     const CELL_WIDTH: usize = 8;
     const CELL_HEIGHT: usize = 10;
     const SCALE_X: usize = 1; // 4 to remove artifacts, 1 to increase apparent resolution
@@ -62,10 +62,12 @@ fn main() {
     const HEIGHT: usize = ROWS * CELL_HEIGHT / SCALE_Y;
     let img_path = env::args().nth(1).unwrap_or("icon.png".to_string());
     let img = image::open(img_path).unwrap();
-    let img = img.resize_exact(WIDTH as u32, HEIGHT as u32, FilterType::Nearest);
+    let img = img.resize(WIDTH as u32, HEIGHT as u32, FilterType::Nearest);
     let mut img = img.grayscale();
     let mut img = img.as_mut_luma8().unwrap();
-    //dither(&mut img, &BiLevel);
+    if env::args().nth(2).unwrap_or_default() == "--dither" {
+        dither(&mut img, &BiLevel);
+    }
 
     let mut image = [[false; WIDTH * SCALE_X]; HEIGHT * SCALE_Y];
     for y in 0..img.height() {
