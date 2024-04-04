@@ -9,8 +9,8 @@ void main(void) {
     uint8_t * vram = (uint8_t *)0xF000;
 
     for (uint16_t i = 0; i < 0x80; i++) {
-        uint16_t y = ((i / 16) + 1) * 2;
-        uint16_t x = (i % 16) * 2;
+        uint16_t y = (i / 16) * 2 + 1;
+        uint16_t x = (i % 16) * 2 + 16;
         vram[y * 128 + x] = (uint8_t)i;
     }
 
@@ -32,7 +32,6 @@ void main(void) {
         ld b, (hl)
         dec hl
 
-        ld sp, #0x6000 // move stack to right below handler
     idleloop:
         ei
         halt
@@ -43,10 +42,6 @@ void main(void) {
     // to make things happen. The VSYNC interrupt should be used instead
     // At 4 MHz, this is 5120 cycles
     __asm
-        // Lazy hack to place handler in memory available to BIOS bank
-        .rept 0x6000
-        nop
-        .endm
     irq1:               // 19 clocks to get to interrupt handler
         di              // 4 clocks
         push af         // 11 clocks

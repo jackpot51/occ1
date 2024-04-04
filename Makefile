@@ -27,7 +27,11 @@ build/beep.ihx: beep.c build/start.rel build/common.rel
 	mkdir -p build
 	$(CC) -Wl-b_START=0x100 --code-loc 0x4000 -o $@ build/start.rel build/common.rel $<
 
-build/example.img: build/beep.com build/game.com build/occ1demo.com build/physics.com
+build/image.ihx: image.c build/start.rel build/common.rel
+	mkdir -p build
+	$(CC) -Wl-b_START=0x100 --code-loc 0x4000 -o $@ build/start.rel build/common.rel $<
+
+build/example.img: build/beep.com build/game.com build/image.com build/physics.com
 	rm -f $@.partial
 	env HOME=$(PWD) dskform -type raw -format osb1sssd $@.partial
 	mkfs.cpm -f osb1sssd $@.partial
@@ -45,7 +49,10 @@ clean:
 	rm -rf build
 
 mame: build/example.imd
-	mame osborne1 -debug -window -rompath roms -floppydisk1 cpm22 -floppydisk2 $<
+	mame osborne1 -window -rompath roms -floppydisk1 roms/osborne1/os1syss.td0 -floppydisk2 $<
+
+mame_debug: build/example.imd
+	mame osborne1 -debug -window -rompath roms -floppydisk1 roms/osborne1/os1syss.td0 -floppydisk2 $<
 
 run: build/physics.com
 	cargo build --release --manifest-path iz-cpm/Cargo.toml
