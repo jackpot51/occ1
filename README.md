@@ -3,7 +3,7 @@ Osbourne 1 Demos
 
 Mame must be installed from https://launchpad.net/~c.falco/+archive/ubuntu/mame
 
-- beep.com plays the DOOM episode 1 mission 1 theme on the bell. I don't know how this will sound on the real hardware, please try to get a recording. The bell has a fixed frequency of 1560 KHz, so this program layers on lower frequencies on top of that by rapidly toggling the bell, which gives a messy sound but should have a distinguishable melody.
+- beep.com plays the DOOM episode 1 mission 1 theme on the bell. I don't know how this will sound on the real hardware, it has not been tested yet. The bell has a fixed frequency of 1560 Hz, so this program layers on lower frequencies on top of that by rapidly toggling the bell, which gives a messy sound but should have a distinguishable melody.
 
 - game.com is a port of the first two levels of Chip's Challenge. Use WASD to move, collect lowercase keys (bgry) to unlock uppercase doors (BGRY). Collect all the chips ($) on the map to unlock the socket (H). You can push dirt blocks (D) into water (~), then walk on the sunken dirt block (d) to turn it into ground. Reach the portal (@) to move to the next level, or press the L key to skip. Once all levels are finished or skipped, the game exits.
 
