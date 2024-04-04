@@ -1,15 +1,22 @@
 #include "common.h"
 
+#define BOOT_FIRE (1 << 0)
+#define BOOT_ICE (1 << 1)
+#define BOOT_SUCTION (1 << 2)
+#define BOOT_WATER (1 << 3)
+
 struct Player {
     int16_t x;
     int16_t y;
     uint8_t c;
+    uint8_t restore;
     uint8_t chips;
     uint8_t needs_chips;
     uint8_t blues;
     uint8_t reds;
     uint8_t greens;
     uint8_t yellows;
+    uint8_t boots;
 };
 
 /*
@@ -62,9 +69,9 @@ void draw_level(struct Player * player, char * level) {
 
 uint8_t move_dirt(int16_t dirt_x, int16_t dirt_y, int16_t dx, int16_t dy) {
     int16_t x = dirt_x + dx;
-    if ((x < 0) || (x >= COLS)) return;
+    if ((x < 0) || (x >= COLS)) return 0;
     int16_t y = dirt_y + dy;
-    if ((y < 0) || (y >= ROWS)) return;
+    if ((y < 0) || (y >= ROWS)) return 0;
 
     uint8_t * vram = (uint8_t *)VRAM;
     uint8_t c = vram[y * 128 + x];
@@ -88,20 +95,34 @@ void move_player(struct Player * player, int16_t dx, int16_t dy) {
     int16_t y = player->y + dy;
     if ((y < 0) || (y >= ROWS)) return;
 
+    switch (player->restore) {
+        case 'v':
+            if ((player->boots & BOOT_SUCTION) == 0) {
+                if (dx != 0 || dy != 1) return;
+            }
+            break;
+        case '^':
+            if ((player->boots & BOOT_SUCTION) == 0) {
+                if (dx != 0 || dy != -1) return;
+            }
+            break;
+        case '<':
+            if ((player->boots & BOOT_SUCTION) == 0) {
+                if (dx != -1 || dy != 0) return;
+            }
+            break;
+        case '>':
+            if ((player->boots & BOOT_SUCTION) == 0) {
+                if (dx != 1 || dy != 0) return;
+            }
+            break;
+    }
+
     uint8_t * vram = (uint8_t *)VRAM;
     uint8_t c = vram[y * 128 + x];
+    uint8_t preserve = 0;
     switch (c) {
         case ' ':
-            break;
-        case '@':
-            // Cheap marker for going to next level
-            player->needs_chips = 0;
-            break;
-        case '$':
-            player->chips += 1;
-            break;
-        case 'H':
-            if (player->chips < player->needs_chips) return;
             break;
         case 'b':
             player->blues += 1;
@@ -110,12 +131,13 @@ void move_player(struct Player * player, int16_t dx, int16_t dy) {
             if (player->blues == 0) return;
             player->blues -= 1;
             break;
-        case 'r':
-            player->reds += 1;
+        case 'd':
             break;
-        case 'R':
-            if (player->reds == 0) return;
-            player->reds -= 1;
+        case 'D':
+            if (!move_dirt(x, y, dx, dy)) return;
+            break;
+        case 'f':
+            player->boots |= BOOT_FIRE;
             break;
         case 'g':
             player->greens += 1;
@@ -124,6 +146,32 @@ void move_player(struct Player * player, int16_t dx, int16_t dy) {
             if (player->greens == 0) return;
             // Green keys can open any green locks
             break;
+        case 'H':
+            if (player->chips < player->needs_chips) return;
+            break;
+        case 'i':
+            player->boots |= BOOT_ICE;
+            break;
+        case 'r':
+            player->reds += 1;
+            break;
+        case 'R':
+            if (player->reds == 0) return;
+            player->reds -= 1;
+            break;
+        case 's':
+            player->boots |= BOOT_SUCTION;
+            break;
+        case 'v':
+            preserve = 1;
+            break;
+        case 'w':
+            player->boots |= BOOT_WATER;
+            break;
+        case 'x':
+            preserve = 1;
+            if ((player->boots & BOOT_ICE) == 0) return;
+            break;
         case 'y':
             player->yellows += 1;
             break;
@@ -131,18 +179,42 @@ void move_player(struct Player * player, int16_t dx, int16_t dy) {
             if (player->yellows == 0) return;
             player->yellows -= 1;
             break;
-        case 'd':
+        case '~':
+            preserve = 1;
+            if ((player->boots & BOOT_WATER) == 0) return;
             break;
-        case 'D':
-            if (!move_dirt(x, y, dx, dy)) return;
+        case '@':
+            // Cheap marker for going to next level
+            player->needs_chips = 0;
+            break;
+        case '$':
+            player->chips += 1;
+            break;
+        case '%':
+            preserve = 1;
+            if ((player->boots & BOOT_FIRE) == 0) return;
+            break;
+        case '^':
+            preserve = 1;
+            break;
+        case '<':
+            preserve = 1;
+            break;
+        case '>':
+            preserve = 1;
             break;
         default:
             return;
     }
 
-    vram[player->y * 128 + player->x] = ' ';
+    vram[player->y * 128 + player->x] = player->restore;
     player->x = x;
     player->y = y;
+    if (preserve) {
+        player->restore = c;
+    } else {
+        player->restore = ' ';
+    }
     vram[player->y * 128 + player->x] = player->c;
 }
 
@@ -150,12 +222,14 @@ void reset_player(struct Player * player, uint8_t needs_chips) {
     player->x = 0;
     player->y = 0;
     player->c = 0x8C; // underlined plus symbol
+    player->restore = ' ';
     player->chips = 0;
     player->needs_chips = needs_chips;
     player->blues = 0;
     player->reds = 0;
     player->greens = 0;
     player->yellows = 0;
+    player->boots = 0;
 }
 
 void level1(struct Player * player) {
@@ -200,6 +274,32 @@ void level2(struct Player * player) {
     );
 }
 
+void level3(struct Player * player) {
+    reset_player(player, 4);
+    //TODO: bugs
+    draw_level(player,
+"                  \n"
+"                  \n"
+"         ###      \n"
+"         #@#      \n"
+"     #####H####   \n"
+"     #v<<<<<<<#   \n"
+"     #v######^#   \n"
+"  ####v#~~~~#^####\n"
+"  #v<<<#~i$~#^<<<#\n"
+"  #v####~~~~####^#\n"
+"  #v#/xx    %%%#^#\n"
+"  #v#xf#    %s%#^#\n"
+"  #v#x$# _  %$%#^#\n"
+"  #v#\\xx  w %%%#^#\n" //TODO: use special file to define this so \\ does not ruin alignment
+"  #v####    ####^#\n"
+"  #>>>>>^^^>>>>>^#\n"
+"  ######^$^^######\n"
+"       #^^^^#     \n"
+"       ######     \n"
+    );
+}
+
 void main(void) {
     //TODO: global variables are not initializing properly
     struct Player player = { 0 };
@@ -216,6 +316,9 @@ void main(void) {
                     break;
                 case 2:
                     level2(&player);
+                    break;
+                case 3:
+                    level3(&player);
                     break;
                 default:
                     puts("Finished all levels\n");
