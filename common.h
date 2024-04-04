@@ -18,5 +18,8 @@ void cursor_position(uint8_t x, uint8_t y);
 #define LOOPS_PER_S (CLOCKS_PER_S / CLOCKS_PER_LOOP)
 #define FRAMERATE 60
 #define LOOPS_PER_FRAME (LOOPS_PER_S / FRAMERATE)
+#define LOOPS_PER_MS (LOOPS_PER_S / 1000)
 
+void delay_loops(uint16_t loops);
 void delay_frame(void);
+void delay_ms(void);

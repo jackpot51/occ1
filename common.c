@@ -63,18 +63,69 @@ void cursor_position(uint8_t x, uint8_t y) {
     putchar(x + 32);
 }
 
+void delay_loops(uint16_t loops) __naked {
+    // Use parameters
+    loops;
+
+    //TODO: reduce instruction counts and adjust loops for wrapper instructions
+    __asm
+        push iy                 // 15 clocks
+        ld iy, #4               // 14 clocks
+        add iy, sp              // 15 clocks
+        push de                 // 11 clocks
+        push af                 // 11 clocks
+
+        ld e, (iy)              // 19 clocks, loops (low)
+        ld d,1(iy)              // 19 clocks, loops (high)
+                                // 104 clocks total
+
+    delay_loops_loop:           // Clocks per instruction: http://www.z80.info/z80time.txt
+        dec de                  // 6 clocks
+        ld a, d                 // 4 clocks
+        or e                    // 4 clocks
+        jp nz, delay_loops_loop // 10 clocks
+                                // 24 clocks total
+
+        pop af                  // 10 cycles
+        pop de                  // 10 cycles
+        pop iy                  // 14 cycles
+        ret                     // 10 cycles
+                                // 44 cycles total
+                                // total non-loop cycles: 148, or 6.167 loops
+    __endasm;
+}
+
 void delay_frame(void) __naked {
     __asm
         push de
         push af
 
         ld de, #LOOPS_PER_FRAME
-    loop:           // Clocks per instruction: http://www.z80.info/z80time.txt
-        dec de      // 6 clocks
-        ld a, d     // 4 clocks
-        or e        // 4 clocks
-        jp nz, loop // 10 clocks
-                    // 24 clocks total
+    delay_frame_loop:           // Clocks per instruction: http://www.z80.info/z80time.txt
+        dec de                  // 6 clocks
+        ld a, d                 // 4 clocks
+        or e                    // 4 clocks
+        jp nz, delay_frame_loop // 10 clocks
+                                // 24 clocks total
+
+        pop af
+        pop de
+        ret
+    __endasm;
+}
+
+void delay_ms(void) __naked {
+    __asm
+        push de
+        push af
+
+        ld de, #LOOPS_PER_MS
+    delay_ms_loop:           // Clocks per instruction: http://www.z80.info/z80time.txt
+        dec de               // 6 clocks
+        ld a, d              // 4 clocks
+        or e                 // 4 clocks
+        jp nz, delay_ms_loop // 10 clocks
+                             // 24 clocks total
 
         pop af
         pop de
