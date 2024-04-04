@@ -41,27 +41,29 @@ void main(void) {
     // 1.28 msec prior to first scan line, this value is magically selected
     // to make things happen. The VSYNC interrupt should be used instead
     // At 4 MHz, this is 5120 cycles
+    //TODO: had to adjust loops for mame
     __asm
     irq1:               // 19 clocks to get to interrupt handler
         di              // 4 clocks
         push af         // 11 clocks
         push de         // 11 clocks
         push hl         // 11 clocks
+        ld de, #200     // WAS #210, 10 clocks
+                        // total non-loop: 66 clocks
 
-        ld de, #210     // 10 clocks
     irq1loop:           // 24 clocks per iteration, multiply by DE
         dec de          // 6 clocks
         ld a, d         // 4 clocks
         or e            // 4 clocks
         jp nz, irq1loop // 10 clocks
-
-        ld de, #0       // 10 clocks (nop)
-        nop             // 4 clocks
+                        // total loop: 200 * 24 = 4800 clocks
+                        // total: 66 + 4800 = 4866 clocks
+                        // 4866 / 4 MHz = 1.2165 ms
 
     // Program for beam racing image generation
     #include "occ1/program.asm"
 
-        //TODO ld a, (#0x2C00) // Clear interrupt
+        ld a, (#0x2C00) // Clear interrupt
 
         pop hl          // 10 clocks
         pop de          // 10 clocks
