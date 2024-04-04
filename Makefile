@@ -10,7 +10,9 @@ CC=sdcc \
 	--stack-loc 0x8000 \
 	--no-std-crt0
 
-all: build/example.imd
+FORMAT=osb1sssd
+
+all: build/example.imd build/system.imd
 
 build/%.com: build/%.ihx
 	objcopy -Iihex -Obinary $< $@
@@ -33,26 +35,38 @@ build/image.ihx: image.c build/start.rel build/common.rel occ1/program.asm
 
 build/example.img: build/beep.com build/game.com build/image.com build/physics.com
 	rm -f $@.partial
-	env HOME=$(PWD) dskform -type raw -format osb1sssd $@.partial
-	mkfs.cpm -f osb1sssd $@.partial
+	env HOME=$(PWD) dskform -type raw -format $(FORMAT) $@.partial
+	mkfs.cpm -f $(FORMAT) $@.partial
 	for file in $^; do \
-	cpmcp -f osb1sssd $@.partial $$file 0:$$(basename $$file); \
+	cpmcp -f $(FORMAT) $@.partial $$file 0:$$(basename $$file); \
 	done
 	mv $@.partial $@
 
 build/example.imd: build/example.img
 	rm -f $@.partial
-	env HOME=$(PWD) dsktrans -itype raw -format osb1sssd -otype imd $< $@.partial
+	env HOME=$(PWD) dsktrans -itype raw -format $(FORMAT) -otype imd $< $@.partial
+	mv $@.partial $@
+
+build/system.img: roms/osborne1/os1syss.td0
+	mkdir -p build
+	rm -f $@.partial
+	env HOME=$(PWD) dsktrans -itype tele -format $(FORMAT) -otype raw $< $@.partial
+	cpmrm -f $(FORMAT) $@.partial autost.com
+	mv $@.partial $@
+
+build/system.imd: build/system.img
+	rm -f $@.partial
+	env HOME=$(PWD) dsktrans -itype raw -format $(FORMAT) -otype imd $< $@.partial
 	mv $@.partial $@
 
 clean:
 	rm -rf build
 
-mame: build/example.imd
-	mame osborne1 -window -rompath roms -floppydisk1 roms/osborne1/os1syss.td0 -floppydisk2 $<
+mame: build/example.imd build/system.imd
+	mame osborne1 -window -rompath roms -floppydisk1 build/system.imd -floppydisk2 $<
 
-mame_debug: build/example.imd
-	mame osborne1 -debug -window -rompath roms -floppydisk1 roms/osborne1/os1syss.td0 -floppydisk2 $<
+mame_debug: build/example.imd build/system.imd
+	mame osborne1 -debug -window -rompath roms -floppydisk1 build/system.imd -floppydisk2 $<
 
 run: build/physics.com
 	cargo build --release --manifest-path iz-cpm/Cargo.toml
