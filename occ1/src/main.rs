@@ -72,7 +72,7 @@ fn main() {
         for x in 0..img.width() {
             let value = match img.get_pixel(x, y) {
                 Luma([luma]) => {
-                    *luma >= 128
+                    *luma < 128
                 },
                 other_pixel => {
                     panic!("unsupported pixel {:?}", other_pixel)
