@@ -59,7 +59,7 @@ fn main() {
         println!("Row {}", row);
         for byte in 0..256 {
             let chars = &patterns[row * 256 + byte];
-            if ! chars.is_empty() {
+            if !chars.is_empty() {
                 println!("0x{:02X}: {:?}", byte, chars);
                 print_byte(byte as u8);
                 println!();
@@ -94,12 +94,10 @@ fn main() {
     for y in 0..img.height() {
         for x in 0..img.width() {
             let value = match img.get_pixel(x, y) {
-                Luma([luma]) => {
-                    *luma < 128
-                },
+                Luma([luma]) => *luma < 128,
                 other_pixel => {
                     panic!("unsupported pixel {:?}", other_pixel)
-                },
+                }
             };
             for off_y in 0..SCALE_Y {
                 for off_x in 0..SCALE_X {
@@ -119,8 +117,15 @@ fn main() {
     for (row, line) in image.iter().enumerate() {
         let mut cycles = 0;
 
+        writeln!(asm, "// row {}", row);
+
         if old_algorithm {
-            writeln!(asm, "ld hl, #0x{:04X} // cycle {}", 0xF000 + (row / 10) * 128, cycles);
+            writeln!(
+                asm,
+                "ld hl, #0x{:04X} // cycle {}",
+                0xF000 + (row / 10) * 128,
+                cycles
+            );
             cycles += 10;
         }
 
@@ -139,8 +144,8 @@ fn main() {
             if patterns[pattern_offset + byte].is_empty() {
                 let mut closest_opt = None;
                 for other_byte in 0..256 {
-                    let pattern_chars = &patterns[pattern_offset + other_byte];
-                    if !pattern_chars.is_empty() {
+                    let other_chars = &patterns[pattern_offset + other_byte];
+                    if !other_chars.is_empty() {
                         //TODO: difference should be smarter than just comparing bits
                         let mut diff = 0;
                         for col in 0..8 {
@@ -157,55 +162,65 @@ fn main() {
                         */
 
                         closest_opt = Some(match closest_opt.take() {
-                            Some((prev_byte, prev_diff)) => if diff < prev_diff {
-                                (other_byte, diff)
-                            } else if diff == prev_diff {
-                                // Prefer previously used byte
-                                if pattern_chars.contains(&(vram[vram_index] as char)) {
+                            Some((prev_byte, prev_diff)) => {
+                                if diff < prev_diff {
                                     (other_byte, diff)
+                                } else if diff == prev_diff {
+                                    // Prefer previously used byte
+                                    if other_chars.contains(&(vram[vram_index] as char)) {
+                                        (other_byte, diff)
+                                    } else {
+                                        (prev_byte, prev_diff)
+                                    }
                                 } else {
                                     (prev_byte, prev_diff)
                                 }
-                            } else {
-                                (prev_byte, prev_diff)
-                            },
-                            None => (other_byte, diff)
+                            }
+                            None => (other_byte, diff),
                         });
                     }
                 }
                 byte = closest_opt.unwrap().0;
             }
 
+            //TODO: blankness is not the best thing to check, instead we should be minimizing
+            // changes accross lines
+            //
             // This prefers characters like ' ' with lots of blank lines on unused lines
             // This helps with adjusting timing.
-            let mut blankest_opt = None;
-            for c in patterns[pattern_offset + byte].iter() {
+            let mut blankest_opt: Option<(char, u8)> = None;
+            for &c in patterns[pattern_offset + byte].iter() {
                 let mut blank_rows = 0;
                 for row in 0..10 {
-                    let row_byte = char_rom[row * 128 + *c as usize];
+                    let row_byte = char_rom[row * 128 + c as usize];
                     if row_byte == 0 {
                         blank_rows += 1;
                     }
                 }
 
                 blankest_opt = Some(match blankest_opt.take() {
-                    Some((prev_c, prev_blank_rows)) => if blank_rows > prev_blank_rows {
-                        (c, blank_rows)
-                    } else if blank_rows == prev_blank_rows {
-                        // Prefer previously used byte
-                        if *c as u8 == vram[vram_index] {
+                    Some((prev_c, prev_blank_rows)) =>
+                    // Prefer previously used byte followed by full block and space and then blankest
+                    {
+                        if c as u8 == vram[vram_index] {
+                            (c, blank_rows)
+                        } else if prev_c as u8 == vram[vram_index] {
+                            (prev_c, prev_blank_rows)
+                        } else if c == '\x16' || c == ' ' {
+                            (c, blank_rows)
+                        } else if prev_c == '\x16' || prev_c == ' ' {
+                            (prev_c, prev_blank_rows)
+                        } else if blank_rows > prev_blank_rows {
                             (c, blank_rows)
                         } else {
                             (prev_c, prev_blank_rows)
                         }
-                    } else {
-                        (prev_c, prev_blank_rows)
-                    },
-                    None => (c, blank_rows)
+                    }
+                    None => (c, blank_rows),
                 });
             }
 
-            let c = *blankest_opt.unwrap().0 as u8;
+            let c = blankest_opt.unwrap().0 as u8;
             println!("{}, {}: 0x{:02X} = {:?}", row, group_i, byte, c as char);
 
             if old_algorithm {
@@ -238,7 +253,12 @@ fn main() {
                             }
                             last_hl = hl;
                         }
-                        writeln!(asm, "ld (#0x{:04X}), hl // cycle {}", 0xF000 + last_vram_index, cycles);
+                        writeln!(
+                            asm,
+                            "ld (#0x{:04X}), hl // cycle {}",
+                            0xF000 + last_vram_index,
+                            cycles
+                        );
                         cycles += 16;
                         vram[last_vram_index] = last_c;
                         vram[vram_index] = c;
@@ -284,17 +304,32 @@ fn main() {
     cycles += 7;
     writeln!(asm, "ld hl, #0x2020 // cycles {}", cycles);
     cycles += 10;
-    for pair in 0..vram.len()/2 {
+    for pair in 0..vram.len() / 2 {
         let last_vram_index = pair * 2;
         let vram_index = last_vram_index + 1;
         if vram[last_vram_index] != b' ' && vram[vram_index] != b' ' {
-            writeln!(asm, "ld (#0x{:04X}), hl // cycles {}", 0xF000 + last_vram_index, cycles);
+            writeln!(
+                asm,
+                "ld (#0x{:04X}), hl // cycles {}",
+                0xF000 + last_vram_index,
+                cycles
+            );
             cycles += 16;
         } else if vram[last_vram_index] != b' ' {
-            writeln!(asm, "ld (#0x{:04X}), a // cycles {}", 0xF000 + last_vram_index, cycles);
+            writeln!(
+                asm,
+                "ld (#0x{:04X}), a // cycles {}",
+                0xF000 + last_vram_index,
+                cycles
+            );
             cycles += 13;
         } else if vram[vram_index] != b' ' {
-            writeln!(asm, "ld (#0x{:04X}), a // cycles {}", 0xF000 + vram_index, cycles);
+            writeln!(
+                asm,
+                "ld (#0x{:04X}), a // cycles {}",
+                0xF000 + vram_index,
+                cycles
+            );
             cycles += 13;
         }
     }
