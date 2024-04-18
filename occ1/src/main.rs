@@ -21,6 +21,25 @@ fn print_string(string: &str, char_rom: &[u8]) {
 }
 
 fn main() {
+    let mut zoom = false;
+    let mut show = true;
+    let mut img_path_opt = None;
+    let mut output_path_opt = None;
+    let mut rows_opt = None;
+    for arg in env::args().skip(1) {
+        if arg == "--no-show" {
+            show = false;
+        } else if arg == "--zoom" {
+            zoom = true;
+        } else if img_path_opt.is_none() {
+            img_path_opt = Some(arg);
+        } else if output_path_opt.is_none() {
+            output_path_opt = Some(arg);
+        } else if rows_opt.is_none() {
+            rows_opt = Some(arg.parse::<usize>().unwrap());
+        }
+    }
+
     let char_rom_path = "../roms/osborne1/7a3007-00.ud15";
     let char_rom = fs::read(&char_rom_path).expect("failed to read character ROM");
 
@@ -53,23 +72,25 @@ fn main() {
 
     use image::{self, imageops::*, GenericImageView, Luma};
     const COLS: usize = 17; // 52 is maximum, adjust for cycles
-    const ROWS: usize = 24; // 24 is maximum
+    let ROWS: usize = rows_opt.unwrap_or(24); // 24 is maximum
     const CELL_WIDTH: usize = 8;
     const CELL_HEIGHT: usize = 10;
     const SCALE_X: usize = 1; // 4 to remove artifacts, 1 to increase apparent resolution
     const SCALE_Y: usize = 1; // Multiply this by 256 cycles for character swapping time
     const WIDTH: usize = COLS * CELL_WIDTH / SCALE_X;
-    const HEIGHT: usize = ROWS * CELL_HEIGHT / SCALE_Y;
-    let img_path = env::args().nth(1).unwrap_or("icon.png".to_string());
+    let HEIGHT: usize = ROWS * CELL_HEIGHT / SCALE_Y;
+    let img_path = img_path_opt.unwrap_or("res/icon.png".to_string());
     let img = image::open(img_path).unwrap();
-    let img = img.resize(WIDTH as u32, HEIGHT as u32, FilterType::Nearest);
+    let img = if zoom {
+        img.resize_to_fill(WIDTH as u32, HEIGHT as u32, FilterType::Nearest)
+    } else {
+        img.resize(WIDTH as u32, HEIGHT as u32, FilterType::Nearest)
+    };
     let mut img = img.grayscale();
     let mut img = img.as_mut_luma8().unwrap();
-    if env::args().nth(2).unwrap_or_default() == "--dither" {
-        dither(&mut img, &BiLevel);
-    }
+    //dither(&mut img, &BiLevel);
 
-    let mut image = [[false; WIDTH * SCALE_X]; HEIGHT * SCALE_Y];
+    let mut image = vec![[false; WIDTH * SCALE_X]; HEIGHT * SCALE_Y];
     for y in 0..img.height() {
         for x in 0..img.width() {
             let value = match img.get_pixel(x, y) {
@@ -182,7 +203,12 @@ fn main() {
         writeln!(asm, "// total cycles {}", cycles);
     }
 
-    fs::write("program.asm", asm).unwrap();
+    let output_path = output_path_opt.unwrap_or("program.asm".to_string());
+    fs::write(&output_path, asm).unwrap();
+
+    if !show {
+        return;
+    }
 
     use std::num::NonZeroU32;
     use winit::event::{Event, WindowEvent};
