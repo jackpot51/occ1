@@ -8,11 +8,13 @@ void main(void) {
 
     uint8_t * vram = (uint8_t *)0xF000;
 
+    /* Character map
     for (uint16_t i = 0; i < 0x80; i++) {
         uint16_t y = (i / 16) * 2 + 1;
         uint16_t x = (i % 16) * 2 + 16;
         vram[y * 128 + x] = (uint8_t)i;
     }
+    */
 
     //TODO: restore system after some number of interations
     __asm

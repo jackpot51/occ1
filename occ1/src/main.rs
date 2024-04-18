@@ -71,7 +71,7 @@ fn main() {
     print_string("Hello", &char_rom);
 
     use image::{self, imageops::*, GenericImageView, Luma};
-    const COLS: usize = 17; // 52 is maximum, adjust for cycles
+    const COLS: usize = 30; // 52 is maximum, adjust for cycles
     let ROWS: usize = rows_opt.unwrap_or(24); // 24 is maximum
     const CELL_WIDTH: usize = 8;
     const CELL_HEIGHT: usize = 10;
@@ -109,16 +109,25 @@ fn main() {
         }
     }
 
+    let mut vram = vec![b' '; 4096];
     let mut asm = String::new();
-
     let mut matched = image.clone();
+    let old_algorithm = false;
+    let mut last_c = 0;
+    //TODO: Make sure hl is properly initialized!
+    let mut last_hl = 0;
     for (row, line) in image.iter().enumerate() {
         let mut cycles = 0;
 
-        writeln!(asm, "ld hl, #0x{:04X} // cycle {}", 0xF000 + (row / 10) * 128, cycles);
-        cycles += 10;
+        if old_algorithm {
+            writeln!(asm, "ld hl, #0x{:04X} // cycle {}", 0xF000 + (row / 10) * 128, cycles);
+            cycles += 10;
+        }
 
         for (group_i, group) in line.chunks(8).enumerate() {
+            //TODO: this is offset by 11 to center
+            let vram_index = (row / 10) * 128 + group_i + 11;
+
             let mut byte = 0;
             for (col, value) in group.iter().enumerate() {
                 if *value {
@@ -130,7 +139,8 @@ fn main() {
             if patterns[pattern_offset + byte].is_empty() {
                 let mut closest_opt = None;
                 for other_byte in 0..256 {
-                    if !patterns[pattern_offset + other_byte].is_empty() {
+                    let pattern_chars = &patterns[pattern_offset + other_byte];
+                    if !pattern_chars.is_empty() {
                         //TODO: difference should be smarter than just comparing bits
                         let mut diff = 0;
                         for col in 0..8 {
@@ -149,6 +159,13 @@ fn main() {
                         closest_opt = Some(match closest_opt.take() {
                             Some((prev_byte, prev_diff)) => if diff < prev_diff {
                                 (other_byte, diff)
+                            } else if diff == prev_diff {
+                                // Prefer previously used byte
+                                if pattern_chars.contains(&(vram[vram_index] as char)) {
+                                    (other_byte, diff)
+                                } else {
+                                    (prev_byte, prev_diff)
+                                }
                             } else {
                                 (prev_byte, prev_diff)
                             },
@@ -174,6 +191,13 @@ fn main() {
                 blankest_opt = Some(match blankest_opt.take() {
                     Some((prev_c, prev_blank_rows)) => if blank_rows > prev_blank_rows {
                         (c, blank_rows)
+                    } else if blank_rows == prev_blank_rows {
+                        // Prefer previously used byte
+                        if *c as u8 == vram[vram_index] {
+                            (c, blank_rows)
+                        } else {
+                            (prev_c, prev_blank_rows)
+                        }
                     } else {
                         (prev_c, prev_blank_rows)
                     },
@@ -181,27 +205,100 @@ fn main() {
                 });
             }
 
-            let c = blankest_opt.unwrap().0;
-            println!("{}, {}: 0x{:02X} = {:?}", row, group_i, byte, c);
+            let c = *blankest_opt.unwrap().0 as u8;
+            println!("{}, {}: 0x{:02X} = {:?}", row, group_i, byte, c as char);
 
-            writeln!(asm, "ld (hl), #0x{:02X} // cycle {}", *c as u8, cycles);
-            cycles += 10;
-            writeln!(asm, "inc l // cycle {}", cycles);
-            cycles += 4;
+            if old_algorithm {
+                writeln!(asm, "ld (hl), #0x{:02X} // cycle {}", c, cycles);
+                cycles += 10;
+                writeln!(asm, "inc l // cycle {}", cycles);
+                cycles += 4;
+                vram[vram_index] = c;
+            } else {
+                if group_i % 2 == 0 {
+                    // Save c for next column
+                    last_c = c;
+                } else {
+                    let last_vram_index = vram_index - 1;
+                    if vram[last_vram_index] != last_c || vram[vram_index] != c {
+                        let hl = (last_c as u16) | ((c as u16) << 8);
+                        if hl != last_hl {
+                            if hl & 0xFF == last_hl & 0xFF {
+                                // Only set H
+                                writeln!(asm, "ld h, #0x{:02X} // cycle {}", hl >> 8, cycles);
+                                cycles += 7;
+                            } else if hl & 0xFF00 == last_hl & 0xFF00 {
+                                // Only set L
+                                writeln!(asm, "ld l, #0x{:02X} // cycle {}", hl & 0xFF, cycles);
+                                cycles += 7;
+                            } else {
+                                // Set HL
+                                writeln!(asm, "ld hl, #0x{:04X} // cycle {}", hl, cycles);
+                                cycles += 10;
+                            }
+                            last_hl = hl;
+                        }
+                        writeln!(asm, "ld (#0x{:04X}), hl // cycle {}", 0xF000 + last_vram_index, cycles);
+                        cycles += 16;
+                        vram[last_vram_index] = last_c;
+                        vram[vram_index] = c;
+                    }
+                }
+            }
 
             for col in 0..8 {
                 matched[row][group_i * 8 + col] = byte & (0x80 >> col) != 0;
             }
         }
 
-        while cycles <= 256 - 4 {
-            writeln!(asm, "nop // cycles {}", cycles);
-            cycles += 4;
+        while cycles < 256 {
+            let remaining = 256 - cycles;
+            if remaining >= 4 && remaining % 4 == 0 {
+                writeln!(asm, "nop // cycles {}", cycles);
+                cycles += 4;
+            } else if remaining >= 6 && remaining % 4 == 2 {
+                writeln!(asm, "inc de // cycles {}", cycles);
+                cycles += 6;
+            } else if remaining >= 7 && remaining % 4 == 3 {
+                writeln!(asm, "ld d, #0 // cycles {}", cycles);
+                cycles += 7;
+            } else if remaining >= 9 && remaining % 4 == 1 {
+                writeln!(asm, "ld a, i // cycles {}", cycles);
+                cycles += 9;
+            } else {
+                eprintln!("{}", asm);
+                panic!("cannot figure out nops for {} remaining cycles", remaining);
+            }
         }
 
-        assert_eq!(cycles, 256);
         writeln!(asm, "// total cycles {}", cycles);
+        if cycles != 256 {
+            eprintln!("{}", asm);
+            panic!("total cycles not 256");
+        }
     }
+
+    let mut cycles = 0;
+    writeln!(asm, "// clearing as needed");
+    writeln!(asm, "ld a, #0x20 // cycles {}", cycles);
+    cycles += 7;
+    writeln!(asm, "ld hl, #0x2020 // cycles {}", cycles);
+    cycles += 10;
+    for pair in 0..vram.len()/2 {
+        let last_vram_index = pair * 2;
+        let vram_index = last_vram_index + 1;
+        if vram[last_vram_index] != b' ' && vram[vram_index] != b' ' {
+            writeln!(asm, "ld (#0x{:04X}), hl // cycles {}", 0xF000 + last_vram_index, cycles);
+            cycles += 16;
+        } else if vram[last_vram_index] != b' ' {
+            writeln!(asm, "ld (#0x{:04X}), a // cycles {}", 0xF000 + last_vram_index, cycles);
+            cycles += 13;
+        } else if vram[vram_index] != b' ' {
+            writeln!(asm, "ld (#0x{:04X}), a // cycles {}", 0xF000 + vram_index, cycles);
+            cycles += 13;
+        }
+    }
+    writeln!(asm, "// total cycles {}", cycles);
 
     let output_path = output_path_opt.unwrap_or("program.asm".to_string());
     fs::write(&output_path, asm).unwrap();
