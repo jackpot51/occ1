@@ -6,8 +6,7 @@
 
 CC=sdcc \
 	-mz80 \
-	--data-loc 0x2000 \
-	--stack-loc 0x8000 \
+	--stack-loc 0xC800 \
 	--no-std-crt0
 
 # For example, -debug
