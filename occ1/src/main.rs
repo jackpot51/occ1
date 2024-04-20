@@ -71,7 +71,7 @@ fn main() {
     print_string("Hello", &char_rom);
 
     use image::{self, imageops::*, GenericImageView, Luma};
-    const COLS: usize = 30; // 52 is maximum, adjust for cycles
+    const COLS: usize = 17; // 52 is maximum, adjust for cycles
     let ROWS: usize = rows_opt.unwrap_or(24); // 24 is maximum
     const CELL_WIDTH: usize = 8;
     const CELL_HEIGHT: usize = 10;
@@ -110,7 +110,7 @@ fn main() {
     let mut vram = vec![b' '; 4096];
     let mut asm = String::new();
     let mut matched = image.clone();
-    let old_algorithm = false;
+    let old_algorithm = true;
     let mut last_c = 0;
     //TODO: Make sure hl is properly initialized!
     let mut last_hl = 0;
@@ -298,42 +298,44 @@ fn main() {
         }
     }
 
-    let mut cycles = 0;
-    writeln!(asm, "// clearing as needed");
-    writeln!(asm, "ld a, #0x20 // cycles {}", cycles);
-    cycles += 7;
-    writeln!(asm, "ld hl, #0x2020 // cycles {}", cycles);
-    cycles += 10;
-    for pair in 0..vram.len() / 2 {
-        let last_vram_index = pair * 2;
-        let vram_index = last_vram_index + 1;
-        if vram[last_vram_index] != b' ' && vram[vram_index] != b' ' {
-            writeln!(
-                asm,
-                "ld (#0x{:04X}), hl // cycles {}",
-                0xF000 + last_vram_index,
-                cycles
-            );
-            cycles += 16;
-        } else if vram[last_vram_index] != b' ' {
-            writeln!(
-                asm,
-                "ld (#0x{:04X}), a // cycles {}",
-                0xF000 + last_vram_index,
-                cycles
-            );
-            cycles += 13;
-        } else if vram[vram_index] != b' ' {
-            writeln!(
-                asm,
-                "ld (#0x{:04X}), a // cycles {}",
-                0xF000 + vram_index,
-                cycles
-            );
-            cycles += 13;
+    if ! old_algorithm {
+        let mut cycles = 0;
+        writeln!(asm, "// clearing as needed");
+        writeln!(asm, "ld a, #0x20 // cycles {}", cycles);
+        cycles += 7;
+        writeln!(asm, "ld hl, #0x2020 // cycles {}", cycles);
+        cycles += 10;
+        for pair in 0..vram.len() / 2 {
+            let last_vram_index = pair * 2;
+            let vram_index = last_vram_index + 1;
+            if vram[last_vram_index] != b' ' && vram[vram_index] != b' ' {
+                writeln!(
+                    asm,
+                    "ld (#0x{:04X}), hl // cycles {}",
+                    0xF000 + last_vram_index,
+                    cycles
+                );
+                cycles += 16;
+            } else if vram[last_vram_index] != b' ' {
+                writeln!(
+                    asm,
+                    "ld (#0x{:04X}), a // cycles {}",
+                    0xF000 + last_vram_index,
+                    cycles
+                );
+                cycles += 13;
+            } else if vram[vram_index] != b' ' {
+                writeln!(
+                    asm,
+                    "ld (#0x{:04X}), a // cycles {}",
+                    0xF000 + vram_index,
+                    cycles
+                );
+                cycles += 13;
+            }
         }
+        writeln!(asm, "// total cycles {}", cycles);
     }
-    writeln!(asm, "// total cycles {}", cycles);
 
     let output_path = output_path_opt.unwrap_or("program.asm".to_string());
     fs::write(&output_path, asm).unwrap();

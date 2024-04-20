@@ -1,10 +1,17 @@
 #include "common.h"
 #include "notes.h"
 
+#pragma codeseg BEEP
+
 #define VIDEO_PIA_PORT_B_DATA 0x2C02
 #define VIDEO_PIA_PORT_B_CONTROL 0x2C03
 
 void bell(uint8_t on) {
+    // Switch to bank 2 for port access
+    __asm
+        out (#0), a
+    __endasm;
+
     uint8_t * control = (uint8_t *)VIDEO_PIA_PORT_B_CONTROL;
     *control = 4;
 
@@ -14,6 +21,11 @@ void bell(uint8_t on) {
     } else {
         *data &= 0xDF;
     }
+    
+    // Switch to bank 1 for program access
+    __asm
+        out (#1), a
+    __endasm;
 }
 
 void note(uint16_t half_period_loops, int32_t total_loops) {
@@ -53,10 +65,9 @@ void main() {
         "#                                        #\r\n"
     );
 
-    // Disable interrupts and switch to bank 2 for port access
+    // Disable interrupts
     __asm
         di
-        out (#0), a
     __endasm;
 
     NOTE(E2, EIGHTH);
@@ -391,9 +402,8 @@ void main() {
     NOTE(E5, SIXTEENTH);
     NOTE(G5, SIXTEENTH);
 
-    // Switch to bank 1 for program access and enable interrupts
+    // Enable interrupts
     __asm
-        out (#1), a
         ei
     __endasm;
 

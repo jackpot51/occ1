@@ -1,8 +1,7 @@
 # Memory Map
 # COM files start running at 0x100
-# Data is placed at 0x2000 (TODO: does this actually work?)
 # Optional I/O code is placed at 0x4000 (where bank 2 shadow starts)
-# Stack is placed at 0x8000
+# Stack is placed at 0xC800
 
 CC=sdcc \
 	-mz80 \
@@ -20,21 +19,29 @@ all: build/user.imd build/system.imd
 build/%.com: build/%.ihx
 	objcopy -Iihex -Obinary $< $@
 
+build/%.rel: %.asm
+	mkdir -p build
+	sdasz80 -o $@ $<
+
 build/%.rel: %.c
 	mkdir -p build
 	$(CC) -c -o $@ $<
 
 build/%.ihx: %.c build/start.rel build/common.rel
 	mkdir -p build
-	$(CC) -Wl-b_START=0x100 --code-loc 0x108 -o $@ build/start.rel build/common.rel $<
+	$(CC) -o $@ build/start.rel build/common.rel $<
 
 build/beep.ihx: beep.c build/start.rel build/common.rel
 	mkdir -p build
-	$(CC) -Wl-b_START=0x100 --code-loc 0x4000 -o $@ build/start.rel build/common.rel $<
+	$(CC) -Wl-b_BEEP=0x4000 -o $@ build/start.rel build/common.rel $<
 
-build/image.ihx: image.c build/start.rel build/common.rel occ1/program.asm
+build/image.ihx: image.c build/start.rel build/common.rel build/irq1.rel occ1/program.asm
 	mkdir -p build
-	$(CC) -Wl-b_START=0x100 --code-loc 0x4000 -o $@ build/start.rel build/common.rel $<
+	$(CC) -Wl-b_IRQ1=0xC000 -o $@ build/start.rel build/common.rel $< build/irq1.rel
+
+build/rickroll.ihx: rickroll.c build/start.rel build/common.rel build/irq1.rel occ1/build/frame-*.asm
+	mkdir -p build
+	$(CC) -Wl-b_IRQ1=0xC000 -o $@ build/start.rel build/common.rel $< build/irq1.rel
 
 build/system.img: roms/osborne1/os1syss.td0
 	mkdir -p build
@@ -54,6 +61,7 @@ build/user.img: build/beep.com build/game.com build/image.com build/physics.com
 
 build/%.img: build/%.com build/system.img
 	cp -v build/system.img $@.partial
+	cpmrm -f $(FORMAT) $@.partial '*.com'
 	cpmcp -f $(FORMAT) $@.partial $< 0:autost.com
 	mv $@.partial $@
 

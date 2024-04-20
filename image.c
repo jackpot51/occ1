@@ -1,82 +1,18 @@
 #include "common.h"
+#include "irq1.h"
+
+void image(void) __naked {
+    __asm
+    #include "occ1/program.asm"
+    jp _irq1_ret
+    __endasm;
+}
 
 void main(void) {
     clear_screen();
 
-    // Disable interrupts
-    __asm__("di");
+    irq1_program = (uint16_t)image;
+    irq1_override();
 
-    uint8_t * vram = (uint8_t *)0xF000;
-
-    /* Character map
-    for (uint16_t i = 0; i < 0x80; i++) {
-        uint16_t y = (i / 16) * 2 + 1;
-        uint16_t x = (i % 16) * 2 + 16;
-        vram[y * 128 + x] = (uint8_t)i;
-    }
-    */
-
-    //TODO: restore system after some number of interations
-    __asm
-        // high part comes from i register
-        ld a, i
-        ld h, a
-        // IRQ1 sends offset 0xF8
-        ld l, #0xF8
-
-        // replace IRQ1 handler
-        ld de, #irq1
-        ld (hl), e
-        inc hl
-        ld (hl), d
-        ld c, (hl)
-        inc hl
-        ld b, (hl)
-        dec hl
-
-    idleloop:
-        ei
-        halt
-        jp idleloop
-    __endasm;
-
-    // 1.28 msec prior to first scan line, this value is magically selected
-    // to make things happen. The VSYNC interrupt should be used instead
-    // At 4 MHz, this is 5120 cycles
-    //TODO: had to adjust loops for mame
-    __asm
-    irq1:               // 19 clocks to get to interrupt handler
-        di              // 4 clocks
-        push af         // 11 clocks
-        push de         // 11 clocks
-        push hl         // 11 clocks
-        ld de, #200     // WAS #210, 10 clocks
-                        // total non-loop: 66 clocks
-
-    irq1loop:           // 24 clocks per iteration, multiply by DE
-        dec de          // 6 clocks
-        ld a, d         // 4 clocks
-        or e            // 4 clocks
-        jp nz, irq1loop // 10 clocks
-                        // total loop: 200 * 24 = 4800 clocks
-                        // total: 66 + 4800 = 4866 clocks
-                        // 4866 / 4 MHz = 1.2165 ms
-
-    // Program for beam racing image generation
-    #include "occ1/program.asm"
-
-        ld a, (#0x2C00) // Clear interrupt
-
-        pop hl          // 10 clocks
-        pop de          // 10 clocks
-        pop af          // 10 clocks
-        ei              // Enable interrupts
-        ret             // Return from interrupt
-    __endasm;
-
-    // Wait for key
-    while (!getchar()) {}
-
-    clear_screen();
-    exit();
+    while(1) {}
 }
