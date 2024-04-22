@@ -15,6 +15,6 @@ mkdir -p build
 convert "$1" build/frame.png
 for frame in build/frame-*.png
 do
-    target/release/occ1 "$frame" "build/$(basename "$frame" .png).asm" 10 --no-show --zoom
+    target/release/occ1 --no-show --zoom "$frame" "build/$(basename "$frame" .png).asm" 10
     #ASCII output: jp2a --background=dark --width=35 "$frame" | tee "build/$(basename "$frame" .png).txt"
 done

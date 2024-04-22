@@ -1,4 +1,4 @@
-use std::{collections, env, fmt::Write, fs};
+use std::{cmp, collections, env, fmt::Write, fs};
 
 fn print_byte(byte: u8) {
     for col in 0..8 {
@@ -21,13 +21,21 @@ fn print_string(string: &str, char_rom: &[u8]) {
 }
 
 fn main() {
-    let mut zoom = false;
+    let mut invert = false;
+    let mut old_algorithm = true;
     let mut show = true;
+    let mut zoom = false;
     let mut img_path_opt = None;
     let mut output_path_opt = None;
+    let mut cols_opt = None;
     let mut rows_opt = None;
+    let mut vram_init_opt = None;
     for arg in env::args().skip(1) {
-        if arg == "--no-show" {
+        if arg == "--invert" {
+            invert = true;
+        } else if arg == "--new-algo" {
+            old_algorithm = false;
+        } else if arg == "--no-show" {
             show = false;
         } else if arg == "--zoom" {
             zoom = true;
@@ -37,13 +45,25 @@ fn main() {
             output_path_opt = Some(arg);
         } else if rows_opt.is_none() {
             rows_opt = Some(arg.parse::<usize>().unwrap());
+        } else if cols_opt.is_none() {
+            cols_opt = Some(arg.parse::<usize>().unwrap());
+        } else if vram_init_opt.is_none() {
+            if arg.starts_with("0x") {
+                vram_init_opt = Some(u8::from_str_radix(&arg[2..], 16).unwrap());
+            } else {
+                vram_init_opt = Some(arg.parse::<u8>().unwrap());
+            }
         }
     }
 
     let char_rom_path = "../roms/osborne1/7a3007-00.ud15";
     let char_rom = fs::read(&char_rom_path).expect("failed to read character ROM");
 
-    let mut patterns = vec![collections::BTreeSet::new(); 10 * 256];
+    let mut patterns = vec![Vec::new(); 10 * 256];
+    let mut counts = Vec::new();
+    while counts.len() < 256 {
+        counts.push(collections::HashMap::new());
+    }
 
     for c in 0u8..128u8 {
         println!("0x{:02X}: {:?}", c, c as char);
@@ -51,13 +71,19 @@ fn main() {
             let byte = char_rom[row * 128 + c as usize];
             print_byte(byte);
             println!();
-            patterns[row * 256 + byte as usize].insert(c as char);
+            patterns[row * 256 + byte as usize].push(c as char);
+            // Track number of usages for each char per byte
+            *counts[byte as usize].entry(c as char).or_insert_with(|| 0) += 1;
         }
     }
 
     for row in 0..10 {
         println!("Row {}", row);
         for byte in 0..256 {
+            // Sort chars from most used to least
+            let byte_counts = &counts[byte];
+            patterns[row * 256 + byte].sort_by(|a, b| byte_counts[b].cmp(&byte_counts[a]));
+
             let chars = &patterns[row * 256 + byte];
             if !chars.is_empty() {
                 println!("0x{:02X}: {:?}", byte, chars);
@@ -71,13 +97,13 @@ fn main() {
     print_string("Hello", &char_rom);
 
     use image::{self, imageops::*, GenericImageView, Luma};
-    const COLS: usize = 17; // 52 is maximum, adjust for cycles
+    let COLS: usize = cols_opt.unwrap_or(17); // 52 is maximum, adjust for cycles, 17 is ideal for old algorithm
     let ROWS: usize = rows_opt.unwrap_or(24); // 24 is maximum
     const CELL_WIDTH: usize = 8;
     const CELL_HEIGHT: usize = 10;
     const SCALE_X: usize = 1; // 4 to remove artifacts, 1 to increase apparent resolution
     const SCALE_Y: usize = 1; // Multiply this by 256 cycles for character swapping time
-    const WIDTH: usize = COLS * CELL_WIDTH / SCALE_X;
+    let WIDTH: usize = COLS * CELL_WIDTH / SCALE_X;
     let HEIGHT: usize = ROWS * CELL_HEIGHT / SCALE_Y;
     let img_path = img_path_opt.unwrap_or("res/icon.png".to_string());
     let img = image::open(img_path).unwrap();
@@ -90,11 +116,15 @@ fn main() {
     let mut img = img.as_mut_luma8().unwrap();
     //dither(&mut img, &BiLevel);
 
-    let mut image = vec![[false; WIDTH * SCALE_X]; HEIGHT * SCALE_Y];
+    let mut image = vec![vec![false; WIDTH * SCALE_X]; HEIGHT * SCALE_Y];
     for y in 0..img.height() {
         for x in 0..img.width() {
             let value = match img.get_pixel(x, y) {
-                Luma([luma]) => *luma < 128,
+                Luma([luma]) => if invert {
+                    *luma > 128
+                } else {
+                    *luma < 128
+                },
                 other_pixel => {
                     panic!("unsupported pixel {:?}", other_pixel)
                 }
@@ -107,13 +137,14 @@ fn main() {
         }
     }
 
-    let mut vram = vec![b' '; 4096];
+    let vram_init: u8 = vram_init_opt.unwrap_or(b' ');
+    let mut vram = vec![vram_init; 4096];
     let mut asm = String::new();
     let mut matched = image.clone();
-    let old_algorithm = true;
     let mut last_c = 0;
     //TODO: Make sure hl is properly initialized!
     let mut last_hl = 0;
+    let mut max_cycles = 0;
     for (row, line) in image.iter().enumerate() {
         let mut cycles = 0;
 
@@ -131,7 +162,7 @@ fn main() {
 
         for (group_i, group) in line.chunks(8).enumerate() {
             //TODO: this is offset by 11 to center
-            let vram_index = (row / 10) * 128 + group_i + 11;
+            let vram_index = (row / 10) * 128 + group_i + (52 - COLS) / 2;
 
             let mut byte = 0;
             for (col, value) in group.iter().enumerate() {
@@ -183,44 +214,13 @@ fn main() {
                 byte = closest_opt.unwrap().0;
             }
 
-            //TODO: blankness is not the best thing to check, instead we should be minimizing
-            // changes accross lines
-            //
-            // This prefers characters like ' ' with lots of blank lines on unused lines
-            // This helps with adjusting timing.
-            let mut blankest_opt: Option<(char, u8)> = None;
-            for &c in patterns[pattern_offset + byte].iter() {
-                let mut blank_rows = 0;
-                for row in 0..10 {
-                    let row_byte = char_rom[row * 128 + c as usize];
-                    if row_byte == 0 {
-                        blank_rows += 1;
-                    }
-                }
-
-                blankest_opt = Some(match blankest_opt.take() {
-                    Some((prev_c, prev_blank_rows)) =>
-                    // Prefer previously used byte followed by full block and space and then blankest
-                    {
-                        if c as u8 == vram[vram_index] {
-                            (c, blank_rows)
-                        } else if prev_c as u8 == vram[vram_index] {
-                            (prev_c, prev_blank_rows)
-                        } else if c == '\x16' || c == ' ' {
-                            (c, blank_rows)
-                        } else if prev_c == '\x16' || prev_c == ' ' {
-                            (prev_c, prev_blank_rows)
-                        } else if blank_rows > prev_blank_rows {
-                            (c, blank_rows)
-                        } else {
-                            (prev_c, prev_blank_rows)
-                        }
-                    }
-                    None => (c, blank_rows),
-                });
-            }
-
-            let c = blankest_opt.unwrap().0 as u8;
+            let c = if patterns[pattern_offset + byte].contains(&(vram[vram_index] as char)) {
+                // Prefer previous character
+                vram[vram_index]
+            } else {
+                // Get most common character
+                patterns[pattern_offset + byte][0] as u8
+            };
             println!("{}, {}: 0x{:02X} = {:?}", row, group_i, byte, c as char);
 
             if old_algorithm {
@@ -271,6 +271,7 @@ fn main() {
             }
         }
 
+        max_cycles = cmp::max(cycles, max_cycles);
         while cycles < 256 {
             let remaining = 256 - cycles;
             if remaining >= 4 && remaining % 4 == 0 {
@@ -298,17 +299,23 @@ fn main() {
         }
     }
 
-    if ! old_algorithm {
+    println!("max cycles: {}", max_cycles);
+
+    if !old_algorithm {
         let mut cycles = 0;
         writeln!(asm, "// clearing as needed");
-        writeln!(asm, "ld a, #0x20 // cycles {}", cycles);
+        writeln!(asm, "ld a, #0x{:02X} // cycles {}", vram_init, cycles);
         cycles += 7;
-        writeln!(asm, "ld hl, #0x2020 // cycles {}", cycles);
+        writeln!(
+            asm,
+            "ld hl, #0x{:02X}{:02X} // cycles {}",
+            vram_init, vram_init, cycles
+        );
         cycles += 10;
         for pair in 0..vram.len() / 2 {
             let last_vram_index = pair * 2;
             let vram_index = last_vram_index + 1;
-            if vram[last_vram_index] != b' ' && vram[vram_index] != b' ' {
+            if vram[last_vram_index] != vram_init && vram[vram_index] != vram_init {
                 writeln!(
                     asm,
                     "ld (#0x{:04X}), hl // cycles {}",
@@ -316,7 +323,7 @@ fn main() {
                     cycles
                 );
                 cycles += 16;
-            } else if vram[last_vram_index] != b' ' {
+            } else if vram[last_vram_index] != vram_init {
                 writeln!(
                     asm,
                     "ld (#0x{:04X}), a // cycles {}",
@@ -324,7 +331,7 @@ fn main() {
                     cycles
                 );
                 cycles += 13;
-            } else if vram[vram_index] != b' ' {
+            } else if vram[vram_index] != vram_init {
                 writeln!(
                     asm,
                     "ld (#0x{:04X}), a // cycles {}",
