@@ -9,7 +9,7 @@ CC=sdcc \
 	--no-std-crt0
 
 # For example, -debug
-MAMEFLAGS?=
+MAMEFLAGS?=-video bgfx -bgfx_screen_chains crt-geom-deluxe
 
 # Single sided single density
 FORMAT=osb1sssd
