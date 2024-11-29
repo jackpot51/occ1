@@ -6,7 +6,8 @@
 CC=sdcc \
 	-mz80 \
 	--stack-loc 0xC800 \
-	--no-std-crt0
+	--no-std-crt0 \
+	--sdcccall 0
 
 # For example, -debug
 MAMEFLAGS?=-video bgfx -bgfx_screen_chains crt-geom-deluxe
