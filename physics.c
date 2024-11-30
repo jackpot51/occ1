@@ -18,13 +18,25 @@ struct Ball {
 
 #define BALLS 3
 
-void main(void) {
-    //delay_ms(1000);
-    //return;
+void draw_char(char c, int16_t x, int16_t y) {
+    if (x >= 0 && y >= 0) {
+        uint8_t * vram = (uint8_t *)(VRAM + y * 128 + x);
+        *vram = c;
+    }
+}
 
+//TODO: support wrap and newline?
+void draw_string(char * s, int16_t x, int16_t y) {
+    char c;
+    while (c = *s++) {
+        draw_char(c, x++, y);
+    }
+}
+
+void main(void) {
     clear_screen();
 
-    puts("CP/M Physics");
+    draw_string("CP/M Physics", 0, 0);
 
     struct Ball balls[BALLS];
 
@@ -37,7 +49,7 @@ void main(void) {
         ball->vx = 0;
         ball->vy = 0;
         ball->ax = 0;
-        ball->ay = (1 << 8) / 8;
+        ball->ay = (1 << 8) / 16;
     }
 
     balls[0].c = 'o';
@@ -55,13 +67,12 @@ void main(void) {
     balls[2].y = (12 << 8);
     balls[2].vx = (1 << 8);
 
-    for(int frame = 0; frame < FRAMERATE * 10; frame++) {
+    while (1) {
         // Clear old balls
         for (int i = 0; i < BALLS; i++) {
             struct Ball * ball = &balls[i];
 
-            cursor_position((ball->x >> 8), (ball->y >> 8));
-            putchar(' ');
+            draw_char(' ', (ball->x >> 8), (ball->y >> 8));
         }
 
         // Update and draw new balls
@@ -87,15 +98,14 @@ void main(void) {
             ball->vy += ball->ay;
 
             // Print new ball
-            cursor_position((ball->x >> 8), (ball->y >> 8));
-            putchar(ball->c);
+            draw_char(ball->c, (ball->x >> 8), (ball->y >> 8));
         }
 
-        cursor_position(13, 0);
-
         char c = getchar();
-        if (c == 'q') {
+        if (c == 'q' || c == 0x1B) {
             break;
+        } else if (c != 0) {
+            draw_char(c, 13, 0);
         }
 
         delay_frame();
