@@ -71,6 +71,11 @@ build/%.imd: build/%.img
 	env HOME=$(PWD) dsktrans -itype raw -format $(FORMAT) -otype imd $< $@.partial
 	mv $@.partial $@
 
+build/%.td0: build/%.img
+	rm -f $@.partial
+	env HOME=$(PWD) dsktrans -itype raw -format $(FORMAT) -otype tele $< $@.partial
+	mv $@.partial $@
+
 clean:
 	rm -rf build
 
