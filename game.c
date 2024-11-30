@@ -322,29 +322,63 @@ void main(void) {
                     level3(&player);
                     break;
                 default:
-                    puts("Finished all levels\n");
+                    printf("Finished all levels\r\n");
                     running = 0;
                     break;
             }
+
+            if (!running) {
+                break;
+            }
+
+            cursor_position(46, 0);
+            printf("Level\x1BT");
+            cursor_position(46, 1);
+            printf("%d\x1BT", level);
+            cursor_position(46, 3);
+            printf("Chips\x1BT");
+            cursor_position(46, 6);
+            printf("Keys\x1BT");
+            cursor_position(46, 9);
+            printf("Boots\x1BT");
         }
 
-        printf("Chips %d/%d", player.chips, player.needs_chips);
+        cursor_position(46, 4);
+        printf("%d/%d\x1BT", player.chips, player.needs_chips);
+        cursor_position(46, 7);
         if (player.blues) {
-            printf(" Blue");
+            printf("b");
         }
         if (player.reds) {
-            printf(" Red");
+            printf("r");
         }
         if (player.greens) {
-            printf(" Green");
+            printf("g");
         }
         if (player.yellows) {
-            printf(" Yellow");
+            printf("y");
         }
-        // Clear to end of line, then return to beginning
-        printf("\x1BT\r");
+        printf("\x1BT");
+        cursor_position(46, 10);
+        if (player.boots & BOOT_FIRE) {
+            printf("f");
+        }
+        if (player.boots & BOOT_ICE) {
+            printf("i");
+        }
+        if (player.boots & BOOT_SUCTION) {
+            printf("s");
+        }
+        if (player.boots & BOOT_WATER) {
+            printf("w");
+        }
+        printf("\x1BT");
+        cursor_position(0, 0);
 
-        char c = getchar();
+        char c = 0;
+        while (c == 0) {
+            c = getchar();
+        }
         switch (c) {
             case 'w':
                 move_player(&player, 0, -1);
