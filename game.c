@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <stdio.h>
 #include "common.h"
 
@@ -18,6 +19,7 @@ struct Player {
     uint8_t greens;
     uint8_t yellows;
     uint8_t boots;
+    bool redraw_status;
 };
 
 /*
@@ -127,10 +129,12 @@ void move_player(struct Player * player, int16_t dx, int16_t dy) {
             break;
         case 'b':
             player->blues += 1;
+            player->redraw_status = true;
             break;
         case 'B':
             if (player->blues == 0) return;
             player->blues -= 1;
+            player->redraw_status = true;
             break;
         case 'd':
             break;
@@ -139,9 +143,11 @@ void move_player(struct Player * player, int16_t dx, int16_t dy) {
             break;
         case 'f':
             player->boots |= BOOT_FIRE;
+            player->redraw_status = true;
             break;
         case 'g':
             player->greens += 1;
+            player->redraw_status = true;
             break;
         case 'G':
             if (player->greens == 0) return;
@@ -152,22 +158,27 @@ void move_player(struct Player * player, int16_t dx, int16_t dy) {
             break;
         case 'i':
             player->boots |= BOOT_ICE;
+            player->redraw_status = true;
             break;
         case 'r':
             player->reds += 1;
+            player->redraw_status = true;
             break;
         case 'R':
             if (player->reds == 0) return;
             player->reds -= 1;
+            player->redraw_status = true;
             break;
         case 's':
             player->boots |= BOOT_SUCTION;
+            player->redraw_status = true;
             break;
         case 'v':
             preserve = 1;
             break;
         case 'w':
             player->boots |= BOOT_WATER;
+            player->redraw_status = true;
             break;
         case 'x':
             preserve = 1;
@@ -175,10 +186,12 @@ void move_player(struct Player * player, int16_t dx, int16_t dy) {
             break;
         case 'y':
             player->yellows += 1;
+            player->redraw_status = true;
             break;
         case 'Y':
             if (player->yellows == 0) return;
             player->yellows -= 1;
+            player->redraw_status = true;
             break;
         case '~':
             preserve = 1;
@@ -187,9 +200,11 @@ void move_player(struct Player * player, int16_t dx, int16_t dy) {
         case '@':
             // Cheap marker for going to next level
             player->needs_chips = 0;
+            player->redraw_status = true;
             break;
         case '$':
             player->chips += 1;
+            player->redraw_status = true;
             break;
         case '%':
             preserve = 1;
@@ -231,6 +246,7 @@ void reset_player(struct Player * player, uint8_t needs_chips) {
     player->greens = 0;
     player->yellows = 0;
     player->boots = 0;
+    player->redraw_status = true;
 }
 
 void level1(struct Player * player) {
@@ -343,37 +359,41 @@ void main(void) {
             printf("Boots\x1BT");
         }
 
-        cursor_position(46, 4);
-        printf("%d/%d\x1BT", player.chips, player.needs_chips);
-        cursor_position(46, 7);
-        if (player.blues) {
-            printf("b");
+        if (player.redraw_status) {
+            player.redraw_status = false;
+
+            cursor_position(46, 4);
+            printf("%d/%d\x1BT", player.chips, player.needs_chips);
+            cursor_position(46, 7);
+            if (player.blues) {
+                printf("b");
+            }
+            if (player.reds) {
+                printf("r");
+            }
+            if (player.greens) {
+                printf("g");
+            }
+            if (player.yellows) {
+                printf("y");
+            }
+            printf("\x1BT");
+            cursor_position(46, 10);
+            if (player.boots & BOOT_FIRE) {
+                printf("f");
+            }
+            if (player.boots & BOOT_ICE) {
+                printf("i");
+            }
+            if (player.boots & BOOT_SUCTION) {
+                printf("s");
+            }
+            if (player.boots & BOOT_WATER) {
+                printf("w");
+            }
+            printf("\x1BT");
+            cursor_position(0, 0);
         }
-        if (player.reds) {
-            printf("r");
-        }
-        if (player.greens) {
-            printf("g");
-        }
-        if (player.yellows) {
-            printf("y");
-        }
-        printf("\x1BT");
-        cursor_position(46, 10);
-        if (player.boots & BOOT_FIRE) {
-            printf("f");
-        }
-        if (player.boots & BOOT_ICE) {
-            printf("i");
-        }
-        if (player.boots & BOOT_SUCTION) {
-            printf("s");
-        }
-        if (player.boots & BOOT_WATER) {
-            printf("w");
-        }
-        printf("\x1BT");
-        cursor_position(0, 0);
 
         char c = 0;
         while (c == 0) {
