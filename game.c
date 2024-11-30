@@ -321,12 +321,16 @@ void main(void) {
     //TODO: global variables are not initializing properly
     struct Player player = { 0 };
 
-    uint8_t level = 0;
     uint8_t running = 1;
+    uint8_t level = 0;
+    uint8_t frame = 0;
+    uint32_t time = 0;
     while(running) {
         if (player.needs_chips == 0) {
             clear_screen();
             level += 1;
+            frame = 0;
+            time = 0;
             switch(level) {
                 case 1:
                     level1(&player);
@@ -352,19 +356,23 @@ void main(void) {
             cursor_position(46, 1);
             printf("%d\x1BT", level);
             cursor_position(46, 3);
-            printf("Chips\x1BT");
+            printf("Time\x1BT");
+            cursor_position(46, 4);
+            printf("%d\x1BT", time);
             cursor_position(46, 6);
-            printf("Keys\x1BT");
+            printf("Chips\x1BT");
             cursor_position(46, 9);
+            printf("Keys\x1BT");
+            cursor_position(46, 12);
             printf("Boots\x1BT");
         }
 
         if (player.redraw_status) {
             player.redraw_status = false;
 
-            cursor_position(46, 4);
-            printf("%d/%d\x1BT", player.chips, player.needs_chips);
             cursor_position(46, 7);
+            printf("%d/%d\x1BT", player.chips, player.needs_chips);
+            cursor_position(46, 10);
             if (player.blues) {
                 printf("b");
             }
@@ -378,7 +386,7 @@ void main(void) {
                 printf("y");
             }
             printf("\x1BT");
-            cursor_position(46, 10);
+            cursor_position(46, 13);
             if (player.boots & BOOT_FIRE) {
                 printf("f");
             }
@@ -395,10 +403,7 @@ void main(void) {
             cursor_position(0, 0);
         }
 
-        char c = 0;
-        while (c == 0) {
-            c = getchar();
-        }
+        char c = getchar();
         switch (c) {
             case 'w':
                 move_player(&player, 0, -1);
@@ -416,9 +421,21 @@ void main(void) {
                 player.needs_chips = 0;
                 break;
             case 0x1B:
+                clear_screen();
                 running = 0;
                 break;
         }
+
+        frame += 1;
+        while (frame >= 60) {
+            frame -= 60;
+            time += 1;
+            cursor_position(46, 4);
+            printf("%d\x1BT", time);
+            cursor_position(0, 0);
+        }
+        
+        delay_frame();
     }
 
     exit();
