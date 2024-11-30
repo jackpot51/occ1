@@ -7,10 +7,10 @@ CC=sdcc \
 	-mz80 \
 	--stack-loc 0xC800 \
 	--no-std-crt0 \
-	--sdcccall 0
+	--sdcccall 1
 
 # For example, -debug
-MAMEFLAGS?=-video bgfx -bgfx_screen_chains crt-geom-deluxe
+#MAMEFLAGS?=-video bgfx -bgfx_screen_chains crt-geom-deluxe
 
 # Single sided single density
 FORMAT=osb1sssd

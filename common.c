@@ -1,6 +1,6 @@
 #include "common.h"
 
-uint16_t bdos(uint8_t func, uint16_t param) __naked {
+uint16_t bdos(uint8_t func, uint16_t param) __naked __sdcccall(0) {
     // Use parameters
     func;
     param;
@@ -34,19 +34,13 @@ void exit(void) {
     bdos(0, 0);
 }
 
-char getchar(void) {
-    return bdos(6, 0xFF);
+int getchar(void) {
+    return (int)bdos(6, 0xFF);
 }
 
-void putchar(char c) {
+int putchar(char c) {
     bdos(6, c);
-}
-
-void puts(const char * s) {
-    char c;
-    while(c = *s++) {
-        putchar(c);
-    }
+    return (int)c;
 }
 
 void clear_screen(void){
@@ -63,7 +57,7 @@ void cursor_position(uint8_t x, uint8_t y) {
     putchar(x + 32);
 }
 
-void delay_loops(uint16_t loops) __naked {
+void delay_loops(uint16_t loops) __naked __sdcccall(0) {
     // Use parameters
     loops;
 

@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "common.h"
 #include "notes.h"
 
@@ -39,14 +40,13 @@ void note(uint16_t half_period_loops, int32_t total_loops) {
     }
 }
 
-#define NOTE(hz, ms) note((LOOPS_PER_S / hz) / 2, (LOOPS_PER_S * ms) / 1000)
+#define NOTE(hz, ms) note(((LOOPS_PER_S / hz) / 2L), ((LOOPS_PER_S * ms) / 1000L))
 
-#define BPM 240
-#define QUARTER (60000 / BPM)
-#define HALF (QUARTER * 2)
-#define EIGHTH (QUARTER / 2)
-#define SIXTEENTH (EIGHTH / 2)
-
+#define BPM 240L
+#define QUARTER (60000L / BPM)
+#define HALF (QUARTER * 2L)
+#define EIGHTH (QUARTER / 2L)
+#define SIXTEENTH (EIGHTH / 2L)
 
 void main() {
     puts(

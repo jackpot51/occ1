@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "common.h"
 
 #define BOX_LEFT 0

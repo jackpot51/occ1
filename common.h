@@ -5,9 +5,8 @@
 #define VRAM 0xF000
 
 void exit(void);
-char getchar(void);
-void putchar(char c);
-void puts(const char * s);
+int getchar(void);
+int putchar(char c);
 void clear_screen(void);
 void cursor_position(uint8_t x, uint8_t y);
 
@@ -20,6 +19,6 @@ void cursor_position(uint8_t x, uint8_t y);
 #define LOOPS_PER_FRAME (LOOPS_PER_S / FRAMERATE)
 #define LOOPS_PER_MS (LOOPS_PER_S / 1000)
 
-void delay_loops(uint16_t loops);
+void delay_loops(uint16_t loops) __sdcccall(0);
 void delay_frame(void);
 void delay_ms(void);

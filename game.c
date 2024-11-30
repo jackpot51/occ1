@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "common.h"
 
 #define BOOT_FIRE (1 << 0)
