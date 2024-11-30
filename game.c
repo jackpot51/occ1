@@ -328,6 +328,22 @@ void main(void) {
             }
         }
 
+        printf("Chips %d/%d", player.chips, player.needs_chips);
+        if (player.blues) {
+            printf(" Blue");
+        }
+        if (player.reds) {
+            printf(" Red");
+        }
+        if (player.greens) {
+            printf(" Green");
+        }
+        if (player.yellows) {
+            printf(" Yellow");
+        }
+        // Clear to end of line, then return to beginning
+        printf("\x1BT\r");
+
         char c = getchar();
         switch (c) {
             case 'w':
