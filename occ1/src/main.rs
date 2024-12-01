@@ -30,6 +30,7 @@ fn main() {
     let mut cols_opt = None;
     let mut rows_opt = None;
     let mut vram_init_opt = None;
+    let mut x_offset_opt = None;
     for arg in env::args().skip(1) {
         if arg == "--invert" {
             invert = true;
@@ -53,11 +54,16 @@ fn main() {
             } else {
                 vram_init_opt = Some(arg.parse::<u8>().unwrap());
             }
+        } else if x_offset_opt.is_none() {
+            if arg.starts_with("0x") {
+                x_offset_opt = Some(usize::from_str_radix(&arg[2..], 16).unwrap());
+            } else {
+                x_offset_opt = Some(arg.parse::<usize>().unwrap());
+            }
         }
     }
 
-    let char_rom_path = "../roms/osborne1/7a3007-00.ud15";
-    let char_rom = fs::read(&char_rom_path).expect("failed to read character ROM");
+    let char_rom: &[u8] = include_bytes!("../../roms/osborne1/7a3007-00.ud15");
 
     let mut patterns = vec![Vec::new(); 10 * 256];
     let mut counts = Vec::new();
@@ -161,8 +167,7 @@ fn main() {
         }
 
         for (group_i, group) in line.chunks(8).enumerate() {
-            //TODO: this is offset by 11 to center
-            let vram_index = (row / 10) * 128 + group_i + (52 - COLS) / 2;
+            let vram_index = (row / 10) * 128 + group_i + x_offset_opt.unwrap_or((52 - COLS) / 2);
 
             let mut byte = 0;
             for (col, value) in group.iter().enumerate() {

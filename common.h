@@ -9,6 +9,7 @@ int getchar(void);
 int putchar(char c);
 void clear_screen(void);
 void cursor_position(uint8_t x, uint8_t y);
+void screen_position(uint8_t x, uint8_t y);
 
 // OSBORNE 1: 4 MHz, runs delay loop in 24 clocks
 // Run emulator at 4 Mhz and 6 clocks per instruction to match!

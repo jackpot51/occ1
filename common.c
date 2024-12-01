@@ -57,6 +57,16 @@ void cursor_position(uint8_t x, uint8_t y) {
     putchar(x + 32);
 }
 
+void screen_position(uint8_t x, uint8_t y) {
+    // Position cursor
+    putchar(0x1B);
+    putchar('S');
+    //TODO: ensure y <= 80
+    putchar(y + 32);
+    //TODO: ensure x <= 80
+    putchar(x + 32);
+}
+
 void delay_loops(uint16_t loops) __naked __sdcccall(0) {
     // Use parameters
     loops;

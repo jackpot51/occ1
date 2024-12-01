@@ -2,6 +2,36 @@
 
 #pragma codeseg IRQ1
 
+uint8_t read_port(uint16_t port) {
+    // Switch to bank 2 for port access
+    __asm
+        out (#0), a
+    __endasm;
+
+    uint8_t data = *((volatile uint8_t *)port);
+    
+    // Switch to bank 1 for program access
+    __asm
+        out (#1), a
+    __endasm;
+
+    return data;
+}
+
+void write_port(uint16_t port, uint8_t data) {
+    // Switch to bank 2 for port access
+    __asm
+        out (#0), a
+    __endasm;
+
+    *((volatile uint8_t *)port) = data;
+    
+    // Switch to bank 1 for program access
+    __asm
+        out (#1), a
+    __endasm;
+}
+
 void irq1_override(void) {
     //TODO: restore system after some number of interations
     __asm

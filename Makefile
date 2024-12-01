@@ -36,7 +36,15 @@ build/beep.ihx: beep.c build/start.rel build/common.rel
 	mkdir -p build
 	$(CC) -Wl-b_BEEP=0x4000 -o $@ build/start.rel build/common.rel $<
 
-build/image.ihx: image.c build/start.rel build/common.rel build/irq1.rel occ1/program.asm
+build/osborne.asm: occ1/res/osborne.png occ1/src/main.rs
+	mkdir -p build
+	cargo run --release --manifest-path occ1/Cargo.toml -- --new-algo --no-show $< $@ 22 27 0x16 0
+
+build/redox.asm: occ1/res/icon.png occ1/src/main.rs
+	mkdir -p build
+	cargo run --release --manifest-path occ1/Cargo.toml -- --invert --new-algo --zoom $< $@ 22 28 0x16 27
+
+build/image.ihx: image.c build/start.rel build/common.rel build/irq1.rel build/osborne.asm build/redox.asm
 	mkdir -p build
 	$(CC) -Wl-b_IRQ1=0xC000 -o $@ build/start.rel build/common.rel $< build/irq1.rel
 
