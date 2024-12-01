@@ -28,6 +28,8 @@ void redox(void) __naked {
 void main(void) {
     uint8_t pa_data = read_port(VIDEO_PIA_PORT_A_DATA);
 
+    clear_screen();
+
     // The osborne image must have VRAM set to 0x16 (full block)
     memset_screen(0x16);
 
@@ -53,6 +55,7 @@ void main(void) {
                 irq1_program = (uint16_t)redox;
             }
 
+            /* Panning for testing
             if (count % 4 == 0) {
                 if (x <= -40) {
                     x = -40;
@@ -66,6 +69,7 @@ void main(void) {
                 // Set X offset, preserving density bit
                 write_port(VIDEO_PIA_PORT_A_DATA, (x << 1) | pa_data & 1);
             }
+            */
         }
     }
 }

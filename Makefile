@@ -42,7 +42,7 @@ build/osborne.asm: occ1/res/osborne.png occ1/src/main.rs
 
 build/redox.asm: occ1/res/icon.png occ1/src/main.rs
 	mkdir -p build
-	cargo run --release --manifest-path occ1/Cargo.toml -- --invert --new-algo --zoom $< $@ 22 28 0x16 27
+	cargo run --release --manifest-path occ1/Cargo.toml -- --invert --new-algo --no-show --zoom $< $@ 22 28 0x16 27
 
 build/image.ihx: image.c build/start.rel build/common.rel build/irq1.rel build/osborne.asm build/redox.asm
 	mkdir -p build
