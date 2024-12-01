@@ -36,15 +36,19 @@ build/beep.ihx: beep.c build/start.rel build/common.rel
 	mkdir -p build
 	$(CC) -Wl-b_BEEP=0x4000 -o $@ build/start.rel build/common.rel $<
 
-build/osborne.asm: occ1/res/osborne.png occ1/src/main.rs
+build/image-left.asm: occ1/res/occ1-left.jpg occ1/src/main.rs
 	mkdir -p build
-	cargo run --release --manifest-path occ1/Cargo.toml -- --new-algo --no-show $< $@ 22 27 0x16 0
+	cargo run --release --manifest-path occ1/Cargo.toml -- --new-algo --no-show $< $@ 22 18 0x16 0
 
-build/redox.asm: occ1/res/icon.png occ1/src/main.rs
+build/image-middle.asm: occ1/res/occ1-right.jpg occ1/src/main.rs
 	mkdir -p build
-	cargo run --release --manifest-path occ1/Cargo.toml -- --invert --new-algo --no-show --zoom $< $@ 22 28 0x16 27
+	cargo run --release --manifest-path occ1/Cargo.toml -- --new-algo --no-show $< $@ 22 18 0x16 17
 
-build/image.ihx: image.c build/start.rel build/common.rel build/irq1.rel build/osborne.asm build/redox.asm
+build/image-right.asm: occ1/res/osborne.png occ1/src/main.rs
+	mkdir -p build
+	cargo run --release --manifest-path occ1/Cargo.toml -- --new-algo --no-show $< $@ 22 27 0x16 34
+
+build/image.ihx: image.c build/start.rel build/common.rel build/irq1.rel build/image-left.asm build/image-middle.asm build/image-right.asm
 	mkdir -p build
 	$(CC) -Wl-b_IRQ1=0xC000 -o $@ build/start.rel build/common.rel $< build/irq1.rel
 

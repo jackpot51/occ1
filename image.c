@@ -11,16 +11,23 @@ void memset_screen(char c) {
     memset(vram, c, ROWS * 128);
 }
 
-void osborne(void) __naked {
+void left(void) __naked {
     __asm
-    #include "build/osborne.asm"
+    #include "build/image-left.asm"
     jp _irq1_ret
     __endasm;
 }
 
-void redox(void) __naked {
+void middle(void) __naked {
     __asm
-    #include "build/redox.asm"
+    #include "build/image-middle.asm"
+    jp _irq1_ret
+    __endasm;
+}
+
+void right(void) __naked {
+    __asm
+    #include "build/image-right.asm"
     jp _irq1_ret
     __endasm;
 }
@@ -38,7 +45,7 @@ void main(void) {
     cursor_position(0, 23);
     printf("0         1         2         3         4         5         6         7         8         9        10        11        12      ");
 
-    irq1_program = (uint16_t)osborne;
+    irq1_program = (uint16_t)left;
     irq1_override();
 
     uint16_t last_count = 0;
@@ -49,13 +56,19 @@ void main(void) {
         if (count != last_count) {
             last_count = count;
 
-            if (count % 2 == 0) {
-                irq1_program = (uint16_t)osborne;
-            } else {
-                irq1_program = (uint16_t)redox;
+            switch (count % 3) {
+                case 0:
+                    irq1_program = (uint16_t)left;
+                    break;
+                case 1:
+                    irq1_program = (uint16_t)middle;
+                    break;
+                case 2:
+                    irq1_program = (uint16_t)right;
+                    break;
             }
 
-            /* Panning for testing
+            // Panning for testing
             if (count % 4 == 0) {
                 if (x <= -40) {
                     x = -40;
@@ -69,7 +82,10 @@ void main(void) {
                 // Set X offset, preserving density bit
                 write_port(VIDEO_PIA_PORT_A_DATA, (x << 1) | pa_data & 1);
             }
-            */
         }
+
+        __asm
+            halt
+        __endasm;
     }
 }
