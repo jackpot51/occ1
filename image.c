@@ -33,9 +33,17 @@ void right(void) __naked {
 }
 
 void main(void) {
-    uint8_t pa_data = read_port(VIDEO_PIA_PORT_A_DATA);
-
     clear_screen();
+
+    printf("Wait for the disk to spin down, then press any key\r\n");
+    printf("to begin the bitmap image demo.\r\n");
+    printf("\r\n");
+    printf("The system will have to be reset afterwards.\r\n");
+    while (getchar() == 0) {
+        __asm
+        halt
+        __endasm;
+    }
 
     // The osborne image must have VRAM set to 0x16 (full block)
     memset_screen(0x16);
@@ -49,7 +57,8 @@ void main(void) {
     irq1_override();
 
     uint16_t last_count = 0;
-    int8_t x = 0;
+    uint8_t pa_data = read_port(VIDEO_PIA_PORT_A_DATA);
+    int8_t x = -10;
     int8_t dx = 1;
     while(1) {
         uint16_t count = irq1_count;
@@ -68,13 +77,13 @@ void main(void) {
                     break;
             }
 
-            // Panning for testing
-            if (count % 4 == 0) {
-                if (x <= -40) {
-                    x = -40;
+            // Panning for testing, at 10Hz
+            if (count % 6 == 0) {
+                if (x <= -29) {
+                    x = -29;
                     dx = 1;
-                } else if (x >= 20) {
-                    x = 20;
+                } else if (x >= 23) {
+                    x = 23;
                     dx = -1;
                 }
                 x += dx;
