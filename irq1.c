@@ -75,11 +75,12 @@ void irq1_handler(void) __naked {
                                 // 19 clocks to get to interrupt handler
         di                      // 4 clocks
         push af                 // 11 clocks
+        push bc                 // 11 clocks
         push de                 // 11 clocks
         push hl                 // 11 clocks
 
-        ld de, #197             // 10 clocks, WAS #196
-                                // total non-loop: 66 clocks
+        ld de, #196             // 10 clocks, WAS #196
+                                // total non-loop: 77 clocks
 
 
     irq1_loop:                  // 24 clocks per iteration, multiply by DE
@@ -94,15 +95,18 @@ void irq1_handler(void) __naked {
         inc hl                  // 6 clocks
         ld (#_irq1_count), hl   // 16 clocks
         ld hl, (#_irq1_program) // 20 clocks
+        ld bc, #0x1620          // 10 clocks
         jp (hl)                 // 4 clocks, jump to frame program
-                                // total non-loop: 77 clocks
-                                // total: 66 + 4728 + 77 = 4871 clocks / 4 Mhz = 1.21775 ms
+                                // total non-loop: 87 clocks
+                                // total: 77 + 4704 + 87 = 4868 clocks / 4 Mhz = 1.217 ms
 
     .globl _irq1_count
     _irq1_count: .word 0
 
     .globl _irq1_program
     _irq1_program: .word _irq1_ret
+
+    _irq1_stack: .word 0
     __endasm;
 }
 
@@ -113,6 +117,7 @@ void irq1_ret(void) __naked {
         out (#1), a             // 11 clocks, Switch to bank 1 for program access
         pop hl                  // 10 clocks
         pop de                  // 10 clocks
+        pop bc                  // 10 clocks
         pop af                  // 10 clocks
         ei                      // 4 clocks, Enable interrupts
         ret                     // 10 clocks, Return from interrupt, TODO: use reti?

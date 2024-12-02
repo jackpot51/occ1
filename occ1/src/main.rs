@@ -245,12 +245,30 @@ fn main() {
                         if hl != last_hl {
                             if hl & 0xFF == last_hl & 0xFF {
                                 // Only set H
-                                writeln!(asm, "ld h, #0x{:02X} // cycle {}", hl >> 8, cycles);
-                                cycles += 7;
+                                let h = (hl >> 8) as u8;
+                                if h == 0x16 {
+                                    writeln!(asm, "ld h, b // cycle {}", cycles);
+                                    cycles += 4;
+                                } else if h == 0x20 {
+                                    writeln!(asm, "ld h, c // cycle {}", cycles);
+                                    cycles += 4;
+                                } else {
+                                    writeln!(asm, "ld h, #0x{:02X} // cycle {}", h, cycles);
+                                    cycles += 7;
+                                }
                             } else if hl & 0xFF00 == last_hl & 0xFF00 {
                                 // Only set L
-                                writeln!(asm, "ld l, #0x{:02X} // cycle {}", hl & 0xFF, cycles);
-                                cycles += 7;
+                                let l = hl as u8;
+                                if l == 0x16 {
+                                    writeln!(asm, "ld l, b // cycle {}", cycles);
+                                    cycles += 4;
+                                } else if l == 0x20 {
+                                    writeln!(asm, "ld l, c // cycle {}", cycles);
+                                    cycles += 4;
+                                } else {
+                                    writeln!(asm, "ld l, #0x{:02X} // cycle {}", l, cycles);
+                                    cycles += 7;
+                                }
                             } else {
                                 // Set HL
                                 writeln!(asm, "ld hl, #0x{:04X} // cycle {}", hl, cycles);

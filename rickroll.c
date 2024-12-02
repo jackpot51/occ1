@@ -4,25 +4,25 @@
 #include "notes.h"
 
 #define FRAME10
-#define FRAME11
+//#define FRAME11
 #define FRAME12
-#define FRAME13
+//#define FRAME13
 #define FRAME14
-#define FRAME15
+//#define FRAME15
 #define FRAME16
-#define FRAME17
+//#define FRAME17
 #define FRAME18
-#define FRAME19
+//#define FRAME19
 #define FRAME20
-#define FRAME21
+//#define FRAME21
 #define FRAME22
-#define FRAME23
+//#define FRAME23
 #define FRAME24
-#define FRAME25
+//#define FRAME25
 #define FRAME26
-#define FRAME27
+//#define FRAME27
 #define FRAME28
-#define FRAME29
+//#define FRAME29
 #define FRAME30
 
 #ifdef FRAME10
@@ -225,6 +225,7 @@ void memset_screen(char c) {
     memset(vram, c, ROWS * 128);
 }
 
+/*
 #define VIDEO_PIA_PORT_B_DATA 0x2C02
 #define VIDEO_PIA_PORT_B_CONTROL 0x2C03
 
@@ -252,16 +253,12 @@ void bell(uint8_t on) {
     ei
     __endasm;
 }
+*/
 
 void main(void) {
     clear_screen();
 
     memset_screen(0x16);
-
-    // Disable interrupts
-    __asm__("di");
-
-    //character_map();
 
     //TODO: restore system after some number of interations
     irq1_override();
