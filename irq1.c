@@ -78,7 +78,7 @@ void irq1_handler(void) __naked {
         push de                 // 11 clocks
         push hl                 // 11 clocks
 
-        ld de, #196             // 10 clocks, WAS #196
+        ld de, #197             // 10 clocks, WAS #196
                                 // total non-loop: 66 clocks
 
 
@@ -89,17 +89,14 @@ void irq1_handler(void) __naked {
         jp nz, irq1_loop        // 10 clocks
                                 // total loop: 196 * 24 = 4704 clocks
 
-        //ld a, (#0x2C00)       // 13 clocks, Clear interrupt
-        ld a, (#_irq1_count)    // 13 clocks, TODO: remove and retime
         out (#1), a             // 11 clocks, Switch to bank 1 for program access
         ld hl, (#_irq1_count)   // 20 clocks
         inc hl                  // 6 clocks
         ld (#_irq1_count), hl   // 16 clocks
         ld hl, (#_irq1_program) // 20 clocks
-        nop                     // 4 clocks
         jp (hl)                 // 4 clocks, jump to frame program
-                                // total non-loop: 94 clocks
-                                // total: 66 + 4704 + 94 = 4864 clocks / 4 Mhz = 1.216 ms
+                                // total non-loop: 77 clocks
+                                // total: 66 + 4728 + 77 = 4871 clocks / 4 Mhz = 1.21775 ms
 
     .globl _irq1_count
     _irq1_count: .word 0
