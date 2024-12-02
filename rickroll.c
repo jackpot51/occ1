@@ -1,70 +1,228 @@
+#include <string.h>
 #include "common.h"
 #include "irq1.h"
 #include "notes.h"
 
-void character_map(void) {
-    uint8_t * vram = (uint8_t *)0xF000;
-    for (uint16_t i = 0; i < 0x80; i++) {
-        uint16_t y = (i / 16) * 2 + 1;
-        uint16_t x = (i % 16) * 2 + 18;
-        vram[y * 128 + x] = (uint8_t)i;
-    }
-}
+#define FRAME10
+#define FRAME11
+#define FRAME12
+#define FRAME13
+#define FRAME14
+#define FRAME15
+#define FRAME16
+#define FRAME17
+#define FRAME18
+#define FRAME19
+#define FRAME20
+#define FRAME21
+#define FRAME22
+#define FRAME23
+#define FRAME24
+#define FRAME25
+#define FRAME26
+#define FRAME27
+#define FRAME28
+#define FRAME29
+#define FRAME30
 
-void frame1(void) __naked {
+#ifdef FRAME10
+void frame10(void) __naked {
     __asm
     #include "occ1/build/frame-10.asm"
     jp _irq1_ret
     __endasm;
 }
+#endif
 
-void frame2(void) __naked {
+#ifdef FRAME11
+void frame11(void) __naked {
+    __asm
+    #include "occ1/build/frame-11.asm"
+    jp _irq1_ret
+    __endasm;
+}
+#endif
+
+#ifdef FRAME12
+void frame12(void) __naked {
+    __asm
+    #include "occ1/build/frame-12.asm"
+    jp _irq1_ret
+    __endasm;
+}
+#endif
+
+#ifdef FRAME13
+void frame13(void) __naked {
     __asm
     #include "occ1/build/frame-13.asm"
     jp _irq1_ret
     __endasm;
 }
+#endif
 
-void frame3(void) __naked {
+#ifdef FRAME14
+void frame14(void) __naked {
+    __asm
+    #include "occ1/build/frame-14.asm"
+    jp _irq1_ret
+    __endasm;
+}
+#endif
+
+#ifdef FRAME15
+void frame15(void) __naked {
+    __asm
+    #include "occ1/build/frame-15.asm"
+    jp _irq1_ret
+    __endasm;
+}
+#endif
+
+#ifdef FRAME16
+void frame16(void) __naked {
     __asm
     #include "occ1/build/frame-16.asm"
     jp _irq1_ret
     __endasm;
 }
+#endif
 
-void frame4(void) __naked {
+#ifdef FRAME17
+void frame17(void) __naked {
+    __asm
+    #include "occ1/build/frame-17.asm"
+    jp _irq1_ret
+    __endasm;
+}
+#endif
+
+#ifdef FRAME18
+void frame18(void) __naked {
     __asm
     #include "occ1/build/frame-18.asm"
     jp _irq1_ret
     __endasm;
 }
+#endif
 
-void frame5(void) __naked {
+#ifdef FRAME19
+void frame19(void) __naked {
+    __asm
+    #include "occ1/build/frame-19.asm"
+    jp _irq1_ret
+    __endasm;
+}
+#endif
+
+#ifdef FRAME20
+void frame20(void) __naked {
+    __asm
+    #include "occ1/build/frame-20.asm"
+    jp _irq1_ret
+    __endasm;
+}
+#endif
+
+#ifdef FRAME21
+void frame21(void) __naked {
     __asm
     #include "occ1/build/frame-21.asm"
     jp _irq1_ret
     __endasm;
 }
+#endif
 
-void frame6(void) __naked {
+#ifdef FRAME22
+void frame22(void) __naked {
+    __asm
+    #include "occ1/build/frame-22.asm"
+    jp _irq1_ret
+    __endasm;
+}
+#endif
+
+#ifdef FRAME23
+void frame23(void) __naked {
+    __asm
+    #include "occ1/build/frame-23.asm"
+    jp _irq1_ret
+    __endasm;
+}
+#endif
+
+#ifdef FRAME24
+void frame24(void) __naked {
     __asm
     #include "occ1/build/frame-24.asm"
     jp _irq1_ret
     __endasm;
 }
+#endif
 
-void frame7(void) __naked {
+#ifdef FRAME25
+void frame25(void) __naked {
+    __asm
+    #include "occ1/build/frame-25.asm"
+    jp _irq1_ret
+    __endasm;
+}
+#endif
+
+#ifdef FRAME26
+void frame26(void) __naked {
+    __asm
+    #include "occ1/build/frame-26.asm"
+    jp _irq1_ret
+    __endasm;
+}
+#endif
+
+#ifdef FRAME27
+void frame27(void) __naked {
     __asm
     #include "occ1/build/frame-27.asm"
     jp _irq1_ret
     __endasm;
 }
+#endif
 
-void frame8(void) __naked {
+#ifdef FRAME28
+void frame28(void) __naked {
+    __asm
+    #include "occ1/build/frame-28.asm"
+    jp _irq1_ret
+    __endasm;
+}
+#endif
+
+#ifdef FRAME29
+void frame29(void) __naked {
+    __asm
+    #include "occ1/build/frame-29.asm"
+    jp _irq1_ret
+    __endasm;
+}
+#endif
+
+#ifdef FRAME30
+void frame30(void) __naked {
     __asm
     #include "occ1/build/frame-30.asm"
     jp _irq1_ret
     __endasm;
+}
+#endif
+
+void nops(void) __naked {
+    __asm
+    #include "nop.asm"
+    __endasm;
+}
+
+void memset_screen(char c) {
+    uint8_t * vram = (uint8_t *)VRAM;
+    memset(vram, c, ROWS * 128);
 }
 
 #define VIDEO_PIA_PORT_B_DATA 0x2C02
@@ -98,6 +256,8 @@ void bell(uint8_t on) {
 void main(void) {
     clear_screen();
 
+    memset_screen(0x16);
+
     // Disable interrupts
     __asm__("di");
 
@@ -113,38 +273,140 @@ void main(void) {
         uint16_t count = irq1_count;
         if (count != last_count) {
             last_count = count;
-            // 18 interrupts is about 3.33 FPS (300 ms per frame)
-            uint16_t frame = (count / 18) % 8;
+            // 6 interrupts is about 10 FPS (100 ms per frame)
+            uint16_t frame = (count / 6) % 20;
             if (frame != last_frame) {
                 last_frame = frame;
                 switch (frame) {
+                    #ifdef FRAME10
                     case 0:
-                        irq1_program = (uint16_t)frame1;
+                        irq1_program = (uint16_t)frame10;
                         break;
+                    #endif
+                    
+                    #ifdef FRAME11
                     case 1:
-                        irq1_program = (uint16_t)frame2;
+                        irq1_program = (uint16_t)frame11;
                         break;
+                    #endif
+                    
+                    #ifdef FRAME12
                     case 2:
-                        irq1_program = (uint16_t)frame3;
+                        irq1_program = (uint16_t)frame12;
                         break;
+                    #endif
+                    
+                    #ifdef FRAME13
                     case 3:
-                        irq1_program = (uint16_t)frame4;
+                        irq1_program = (uint16_t)frame13;
                         break;
+                    #endif
+                    
+                    #ifdef FRAME14
                     case 4:
-                        irq1_program = (uint16_t)frame5;
+                        irq1_program = (uint16_t)frame14;
                         break;
+                    #endif
+                    
+                    #ifdef FRAME15
                     case 5:
-                        irq1_program = (uint16_t)frame6;
+                        irq1_program = (uint16_t)frame15;
                         break;
+                    #endif
+                    
+                    #ifdef FRAME16
                     case 6:
-                        irq1_program = (uint16_t)frame7;
+                        irq1_program = (uint16_t)frame16;
                         break;
+                    #endif
+                    
+                    #ifdef FRAME17
                     case 7:
-                        irq1_program = (uint16_t)frame8;
+                        irq1_program = (uint16_t)frame17;
                         break;
+                    #endif
+                    
+                    #ifdef FRAME18
+                    case 8:
+                        irq1_program = (uint16_t)frame18;
+                        break;
+                    #endif
+                    
+                    #ifdef FRAME19
+                    case 9:
+                        irq1_program = (uint16_t)frame19;
+                        break;
+                    #endif
+                    
+                    #ifdef FRAME20
+                    case 10:
+                        irq1_program = (uint16_t)frame20;
+                        break;
+                    #endif
+                    
+                    #ifdef FRAME21
+                    case 11:
+                        irq1_program = (uint16_t)frame21;
+                        break;
+                    #endif
+                    
+                    #ifdef FRAME22
+                    case 12:
+                        irq1_program = (uint16_t)frame22;
+                        break;
+                    #endif
+                    
+                    #ifdef FRAME23
+                    case 13:
+                        irq1_program = (uint16_t)frame23;
+                        break;
+                    #endif
+                    
+                    #ifdef FRAME24
+                    case 14:
+                        irq1_program = (uint16_t)frame24;
+                        break;
+                    #endif
+                    
+                    #ifdef FRAME25
+                    case 15:
+                        irq1_program = (uint16_t)frame25;
+                        break;
+                    #endif
+                    
+                    #ifdef FRAME26
+                    case 16:
+                        irq1_program = (uint16_t)frame26;
+                        break;
+                    #endif
+                    
+                    #ifdef FRAME27
+                    case 17:
+                        irq1_program = (uint16_t)frame27;
+                        break;
+                    #endif
+                    
+                    #ifdef FRAME28
+                    case 18:
+                        irq1_program = (uint16_t)frame28;
+                        break;
+                    #endif
+                    
+                    #ifdef FRAME29
+                    case 19:
+                        irq1_program = (uint16_t)frame29;
+                        break;
+                    #endif
+                    
+                    #ifdef FRAME30
+                    case 20:
+                        irq1_program = (uint16_t)frame30;
+                        break;
+                    #endif
                 }
             }
 
+            /*TODO: is it realistic to have sound?
             //TODO: more efficient representation
             #define BPM 114
             #define QUARTER (3600 / BPM)
@@ -216,8 +478,10 @@ void main(void) {
             } else {
                 half_period_loops = 0;
             }
+            */
         }
 
+        /*
         if (half_period_loops > 0) {
             // Play bell
             bell(1);
@@ -225,5 +489,10 @@ void main(void) {
             bell(0);
             delay_loops(half_period_loops);
         }
+        */
+
+        __asm
+        halt
+        __endasm;
     }
 }
