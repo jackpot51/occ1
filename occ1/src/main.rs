@@ -279,6 +279,32 @@ fn main() {
         max_cycles = cmp::max(cycles, max_cycles);
         while cycles < 256 {
             let remaining = 256 - cycles;
+            if remaining >= 27 {
+                let align = remaining - 27;
+                if align % 4 == 0 {
+                    // Optimization to use nop table
+                    writeln!(asm, "call nop{} // cycles {}", remaining - 17, cycles);
+                    cycles += remaining;
+                    continue;
+                } else if align >= 6 && align % 4 == 2 {
+                    writeln!(asm, "inc de // cycles {}", cycles);
+                    cycles += 6;
+                    continue;
+                } else if align >= 7 && align % 4 == 3 {
+                    writeln!(asm, "ld d, #0 // cycles {}", cycles);
+                    cycles += 7;
+                    continue;
+                } else if align >= 9 && align % 4 == 1 {
+                    writeln!(asm, "ld a, i // cycles {}", cycles);
+                    cycles += 9;
+                } else {
+                    eprintln!("{}", asm);
+                    panic!("cannot figure out nops for {} remaining cycles", align);
+                }
+                continue;
+            }
+
+            // Could not use nop table, doing regular nops
             if remaining >= 4 && remaining % 4 == 0 {
                 writeln!(asm, "nop // cycles {}", cycles);
                 cycles += 4;

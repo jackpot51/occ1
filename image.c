@@ -32,6 +32,12 @@ void right(void) __naked {
     __endasm;
 }
 
+void nops(void) __naked {
+    __asm
+    #include "nop.asm"
+    __endasm;
+}
+
 void main(void) {
     clear_screen();
 
@@ -78,6 +84,7 @@ void main(void) {
             }
 
             // Panning for testing, at 10Hz
+            /*
             if (count % 6 == 0) {
                 if (x <= -29) {
                     x = -29;
@@ -91,6 +98,7 @@ void main(void) {
                 // Set X offset, preserving density bit
                 write_port(VIDEO_PIA_PORT_A_DATA, (x << 1) | pa_data & 1);
             }
+            */
         }
 
         __asm
