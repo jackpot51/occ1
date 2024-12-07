@@ -1,0 +1,4 @@
+[submodule "fpga/t80"]
+	path = fpga/t80
+	url = https://github.com/mist-devel/T80.git
+	branch = master
