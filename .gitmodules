@@ -1,4 +1,8 @@
-[submodule "fpga/t80"]
-	path = fpga/t80
+[submodule "fpga/T80"]
+	path = fpga/T80
 	url = https://github.com/mist-devel/T80.git
+	branch = master
+[submodule "fpga/MC6821"]
+	path = fpga/MC6821
+	url = https://github.com/EisernSchild/MC6821.git
 	branch = master
