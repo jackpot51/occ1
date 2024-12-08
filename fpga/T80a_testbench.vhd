@@ -7,9 +7,10 @@ entity T80a_testbench is
 end T80a_testbench;
 
 architecture behavior of T80a_testbench is
-    signal RESET_n: std_logic := '1';
+    -- Z80 pins
+    signal RESET_n: std_logic := '0';
     signal R800_mode: std_logic := '0';
-    signal CLK_N: std_logic := '1';
+    signal CLK_N: std_logic := '0';
     signal WAIT_n: std_logic := '1';
     signal INT_n: std_logic := '1';
     signal NMI_n: std_logic := '1';
@@ -20,9 +21,14 @@ architecture behavior of T80a_testbench is
     signal WR_n: std_logic;
     signal ADDR: std_logic_vector(15 downto 0);
     signal DATA: std_logic_vector(7 downto 0);
+    -- Clocks
+    signal CLK_62ns: std_logic := '0';
+    signal CLK_DOT: std_logic := '1';
+    signal CLK_MEM: std_logic := '0';
+    signal CLK_CHAR: std_logic := '0';
 begin
-    RESET_n <= '0', '1' after 500 ns;
-    CLK_n <= not CLK_n after 125 ns;
+    RESET_n <= '1' after 500 ns;
+    CLK_62ns <= not CLK_62ns after 62 ns;
 
     z80a: entity work.T80a port map (
         RESET_n => RESET_n,
@@ -46,6 +52,38 @@ begin
         ADDR => ADDR,
         DATA => DATA
     );
+
+    -- Clocks
+
+    clock_dot: process (CLK_62ns)
+    begin
+        if rising_edge(CLK_62ns) then
+            CLK_DOT <= not CLK_DOT;
+        end if;
+    end process;
+
+    clock_cpu: process (CLK_DOT)
+    begin
+        if rising_edge(CLK_DOT) then
+            CLK_n <= not CLK_n;
+        end if;
+    end process;
+
+    clock_mem: process(CLK_n)
+    begin
+        if falling_edge(CLK_n) then
+            CLK_MEM <= not CLK_MEM;
+        end if;
+    end process;
+
+    clock_char: process(CLK_MEM)
+    begin
+        if falling_edge(CLK_MEM) then
+            CLK_CHAR <= not CLK_CHAR;
+        end if;
+    end process;
+
+    -- Serial
 
     stdout: process (CLK_n)
     begin
