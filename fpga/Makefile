@@ -12,7 +12,7 @@ all: build/boot.txt
 	ghdl -a $(GHDL_ARGS) rom.vhd
 	ghdl -a $(GHDL_ARGS) T80a_testbench.vhd
 	ghdl -e $(GHDL_ARGS) T80a_testbench
-	ghdl -r $(GHDL_ARGS) T80a_testbench --stop-time=1ms --vcd=build/T80a_testbench.vcd
+	ghdl -r $(GHDL_ARGS) T80a_testbench --stop-time=34ms --vcd=build/T80a_testbench.vcd
 
 gtkwave:
 	gtkwave build/T80a_testbench.vcd

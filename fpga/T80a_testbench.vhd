@@ -26,6 +26,12 @@ architecture behavior of T80a_testbench is
     signal CLK_DOT: std_logic := '1';
     signal CLK_MEM: std_logic := '0';
     signal CLK_CHAR: std_logic := '0';
+    signal HSYNC: std_logic := '0';
+    signal VSYNC: std_logic := '1';
+    -- Row set to max value so it gets set to 0 on first clock pulse
+    signal ROW: unsigned(8 downto 0) := to_unsigned(259, 9);
+    -- Col set to max value so it gets set to 0 on first clock pulse
+    signal COL: unsigned(9 downto 0) := to_unsigned(511, 10);
 begin
     RESET_n <= '1' after 500 ns;
     CLK_62ns <= not CLK_62ns after 62 ns;
@@ -83,21 +89,45 @@ begin
         end if;
     end process;
 
+    video: process(CLK_DOT)
+    begin
+        if rising_edge(CLK_DOT) or falling_edge(CLK_DOT) then
+            if (COL >= 511) then
+                COL <= (others => '0');
+                HSYNC <= '1';
+                if (ROW >= 259) then
+                    VSYNC <= '0';
+                    ROW <= (others => '0');
+                else
+                    if (ROW = 19) then
+                        VSYNC <= '1';
+                    end if;
+                    ROW <= ROW + 1;
+                end if;
+            else
+                if (COL = 255) then
+                    HSYNC <= '0';
+                end if;
+                COL <= COL + 1;
+            end if;
+        end if;
+    end process;
+
     -- Serial
 
     stdout: process (CLK_n)
     begin
         if rising_edge(CLK_n) then
             if (MREQ_n = '0') then
-                if (RD_n = '0') then
-                    report "MEM READ " &
-                        to_hstring(ADDR) &
-                        " = " &
-                        to_hstring(DATA) &
-                        " '" &
-                        to_string(character'val(to_integer(unsigned(DATA)))) &
-                        "'";
-                end if;
+                --if (RD_n = '0') then
+                --    report "MEM READ " &
+                --        to_hstring(ADDR) &
+                --        " = " &
+                --        to_hstring(DATA) &
+                --        " '" &
+                --        to_string(character'val(to_integer(unsigned(DATA)))) &
+                --        "'";
+                --end if;
                 if (WR_n = '0') then
                     report "MEM WRITE " &
                         to_hstring(ADDR) &
