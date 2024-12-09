@@ -37,7 +37,7 @@ entity rom is
         g_DATA_WIDTH : positive := 8; -- bit width of ROM data bus
         
         -- relative path of memory image file
-        g_MEM_IMG_FILENAME : string := "build/boot.txt"
+        g_MEM_IMG_FILENAME : string := ""
     );
     port (
         CLK_n : in std_logic; -- clock signal
@@ -67,7 +67,7 @@ architecture rtl of rom is
         
         if (g_MEM_IMG_FILENAME'length = 0) then -- linear initialization
             for i in t_MEM'range loop
-                v_mem(i) := std_logic_vector(to_unsigned(i, g_DATA_WIDTH)); -- [address]=address
+                v_mem(i) := std_logic_vector(to_unsigned(0, g_DATA_WIDTH)); -- [address]=0
             end loop;
             report "The memory has been linearly initialized.";
         else -- initialization from a file
@@ -103,6 +103,8 @@ begin
         if (rising_edge(CLK_n)) then
             if (RD_n = '0') then
                 DATA <= c_MEM(to_integer(unsigned(ADDR)));
+            else
+                DATA <= (others => 'Z');
             end if;
         end if;
     end process mem_read;
