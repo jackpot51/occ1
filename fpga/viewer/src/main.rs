@@ -44,15 +44,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         row = 0;
                         col = 0;
                     }
-                    println!("VSYNC {} @ {}, {}", value, row, col);
                 } else if code == hsync_code {
                     if value == vcd::Value::V1 {
-                        if col >= 0 {
+                        if col > 0 {
                             col = 0;
                             row += 1;
                         }
                     }
-                    println!("HSYNC {} @ {}, {}", value, row, col);
                 } else if code == clk_dot_code {
                     if row < height && col < width {
                         // Clear pixel to black

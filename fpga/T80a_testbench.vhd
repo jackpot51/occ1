@@ -38,7 +38,7 @@ architecture behavior of T80a_testbench is
     -- Col set to max value so it gets set to 0 on first clock pulse
     signal COL: unsigned(9 downto 0) := to_unsigned(511, 10);
     signal CHAR_ROW: std_logic_vector(3 downto 0) := (others => '0');
-    signal CHAR_INDEX: std_logic_vector(6 downto 0) := "1000001";
+    signal VRAM_DATA: std_logic_vector(7 downto 0);
     signal CHAR_DATA: std_logic_vector(7 downto 0);
     signal VIDEO: std_logic := '0';
 begin
@@ -108,11 +108,20 @@ begin
         g_ADDR_WIDTH => 16
     )
     port map (
-        CLK_n => CLK_n,
-        RD_n => RD_n or (not ROM_HAS_ADDR_n),
-        WR_n => WR_n or (not ROM_HAS_ADDR_n),
-        ADDR => ADDR,
-        DATA => DATA
+        A_CLK_n => CLK_n,
+        A_RD_n => RD_n or (not ROM_HAS_ADDR_n),
+        A_WR_n => WR_n or (not ROM_HAS_ADDR_n),
+        A_ADDR => ADDR,
+        A_DATA => DATA,
+        --TODO: best clock to use?
+        B_CLK_n => not CLK_62ns,
+        B_RD_n => '0',
+        B_WR_n => '1',
+        B_ADDR(6 downto 0) => std_logic_vector(COL(9 downto 3)),
+        --TODO: row / 10
+        B_ADDR(11 downto 7) => (others => '0'),
+        B_ADDR(15 downto 12) => "1111",
+        B_DATA => VRAM_DATA
     );
 
     -- Video
@@ -126,7 +135,7 @@ begin
         --TODO: best clock?
         CLK_n => not CLK_62ns,
         RD_n => '0',
-        ADDR(6 downto 0) => CHAR_INDEX,
+        ADDR(6 downto 0) => VRAM_DATA(6 downto 0),
         ADDR(10 downto 7) => CHAR_ROW,
         DATA => CHAR_DATA
     );
@@ -146,7 +155,7 @@ begin
             else
                 HSYNC <= '0';
             end if;
-            VIDEO <= CHAR_DATA(to_integer(unsigned(COL(2 downto 0))));
+            VIDEO <= CHAR_DATA(to_integer(7 - unsigned(COL(2 downto 0))));
         end if;
     end process;
 

@@ -37,37 +37,50 @@ entity ram is
         g_DATA_WIDTH : positive := 8 -- bit width of RAM data bus
     );
     port (
-        CLK_n : in std_logic; -- clock signal
-        
-        RD_n   : in  std_logic; -- read enable
-        WR_n   : in  std_logic; -- write enable
-        ADDR : in  std_logic_vector(g_ADDR_WIDTH - 1 downto 0); -- address bus
-        DATA : out std_logic_vector(g_DATA_WIDTH - 1 downto 0) -- output data bus
+        A_CLK_n : in std_logic; -- clock signal
+        A_RD_n   : in  std_logic; -- read enable
+        A_WR_n   : in  std_logic; -- write enable
+        A_ADDR : in  std_logic_vector(g_ADDR_WIDTH - 1 downto 0); -- address bus
+        A_DATA : inout std_logic_vector(g_DATA_WIDTH - 1 downto 0); -- output data bus
+        B_CLK_n : in std_logic; -- clock signal
+        B_RD_n   : in  std_logic; -- read enable
+        B_WR_n   : in  std_logic; -- write enable
+        B_ADDR : in  std_logic_vector(g_ADDR_WIDTH - 1 downto 0); -- address bus
+        B_DATA : inout std_logic_vector(g_DATA_WIDTH - 1 downto 0) -- output data bus
     );
 end entity;
 
 
 architecture rtl of ram is
-    -- definition of the used memory type
-    type t_MEM is array(0 to integer((2 ** g_ADDR_WIDTH) - 1)) of
-        std_logic_vector(g_DATA_WIDTH - 1 downto 0);
-    
-    signal MEM: t_MEM := (
-        others => (others => '0')
-    );
 begin
     -- Description:
     --     Memory read/write mechanism description.
-    mem_rw : process (CLK_n) is
+    mem_rw : process (A_CLK_n, B_CLK_n) is
+        type t_MEM is array(0 to integer((2 ** g_ADDR_WIDTH) - 1)) of
+            std_logic_vector(g_DATA_WIDTH - 1 downto 0);
+        variable MEM: t_MEM := (
+            others => (others => '0')
+        );
     begin
-        if (rising_edge(CLK_n)) then
-            if (RD_n = '0') then
-                DATA <= MEM(to_integer(unsigned(ADDR)));
+        if (rising_edge(A_CLK_n)) then
+            if (A_RD_n = '0') then
+                A_DATA <= MEM(to_integer(unsigned(A_ADDR)));
             else
-                if (WR_n = '0') then
-                    MEM(to_integer(unsigned(ADDR))) <= DATA;
+                if (A_WR_n = '0') then
+                    MEM(to_integer(unsigned(A_ADDR))) := A_DATA;
                 else
-                    DATA <= (others => 'Z');
+                    A_DATA <= (others => 'Z');
+                end if;
+            end if;
+        end if;
+        if (rising_edge(B_CLK_n)) then
+            if (B_RD_n = '0') then
+                B_DATA <= MEM(to_integer(unsigned(B_ADDR)));
+            else
+                if (B_WR_n = '0') then
+                    MEM(to_integer(unsigned(B_ADDR))) := B_DATA;
+                else
+                    B_DATA <= (others => 'Z');
                 end if;
             end if;
         end if;
