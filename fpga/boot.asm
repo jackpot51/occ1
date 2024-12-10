@@ -1,5 +1,7 @@
 ld hl, #0xF000
-ld de, #0x1000
+ld (hl), #'A'
+inc hl
+ld de, #0x0FFF
 loop_clear:
 ld (hl), #' '
 inc hl

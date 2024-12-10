@@ -115,7 +115,7 @@ begin
         A_ADDR => ADDR,
         A_DATA => DATA,
         --TODO: best clock to use?
-        B_CLK_n => not CLK_62ns,
+        B_CLK_n => CLK_62ns,
         B_RD_n => '0',
         B_WR_n => '1',
         B_ADDR(6 downto 0) => std_logic_vector(COL(9 downto 3)),
@@ -190,24 +190,24 @@ begin
     begin
         if rising_edge(CLK_n) then
             if (MREQ_n = '0') then
-                --if (RD_n = '0') then
-                --    report "MEM READ " &
-                --        to_hstring(ADDR) &
-                --        " = " &
-                --        to_hstring(DATA) &
-                --        " '" &
-                --        to_string(character'val(to_integer(unsigned(DATA)))) &
-                --        "'";
-                --end if;
-                if (WR_n = '0') then
-                    report "MEM WRITE " &
-                        to_hstring(ADDR) &
-                        " = " &
-                        to_hstring(DATA) &
-                        " '" &
-                        to_string(character'val(to_integer(unsigned(DATA)))) &
-                        "'";
-                end if;
+                -- if (RD_n = '0') then
+                --     report "MEM READ " &
+                --         to_hstring(ADDR) &
+                --         " = " &
+                --         to_hstring(DATA) &
+                --         " '" &
+                --         to_string(character'val(to_integer(unsigned(DATA)))) &
+                --         "'";
+                -- end if;
+                -- if (WR_n = '0') then
+                --     report "MEM WRITE " &
+                --         to_hstring(ADDR) &
+                --         " = " &
+                --         to_hstring(DATA) &
+                --         " '" &
+                --         to_string(character'val(to_integer(unsigned(DATA)))) &
+                --         "'";
+                -- end if;
             end if;
             if (IORQ_n = '0') then
                 if (RD_n = '0') then
