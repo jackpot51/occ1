@@ -1,108 +1,50 @@
 ld hl, #0xF000
-ld (hl), #'A'
+ld de, #0x1000
+loop_clear:
+ld (hl), #' '
 inc hl
-ld (hl), #'B'
+dec de
+ld a, d
+or e
+jp nz, loop_clear
+
+ld hl, #0xF080
+ld a, #0
+ld b, #32
+loop0:
 inc hl
-ld (hl), #'C'
+ld (hl), a
 inc hl
-ld (hl), #'D'
+inc a
+djnz loop0
+
+ld hl, #0xF180
+ld b, #32
+loop1:
 inc hl
-ld (hl), #'E'
+ld (hl), a
 inc hl
-ld (hl), #'F'
+inc a
+djnz loop1
+
+ld hl, #0xF280
+ld b, #32
+loop2:
 inc hl
-ld (hl), #'G'
+ld (hl), a
 inc hl
-ld (hl), #'H'
+inc a
+djnz loop2
+
+ld hl, #0xF380
+ld b, #32
+loop3:
 inc hl
-ld (hl), #'I'
+ld (hl), a
 inc hl
-ld (hl), #'J'
-inc hl
-ld (hl), #'K'
-inc hl
-ld (hl), #'L'
-inc hl
-ld (hl), #'M'
-inc hl
-ld (hl), #'N'
-inc hl
-ld (hl), #'O'
-inc hl
-ld (hl), #'P'
-inc hl
-ld (hl), #'Q'
-inc hl
-ld (hl), #'R'
-inc hl
-ld (hl), #'S'
-inc hl
-ld (hl), #'T'
-inc hl
-ld (hl), #'U'
-inc hl
-ld (hl), #'V'
-inc hl
-ld (hl), #'W'
-inc hl
-ld (hl), #'X'
-inc hl
-ld (hl), #'Y'
-inc hl
-ld (hl), #'Z'
-inc hl
-ld (hl), #'a'
-inc hl
-ld (hl), #'b'
-inc hl
-ld (hl), #'c'
-inc hl
-ld (hl), #'d'
-inc hl
-ld (hl), #'e'
-inc hl
-ld (hl), #'f'
-inc hl
-ld (hl), #'g'
-inc hl
-ld (hl), #'h'
-inc hl
-ld (hl), #'i'
-inc hl
-ld (hl), #'j'
-inc hl
-ld (hl), #'k'
-inc hl
-ld (hl), #'l'
-inc hl
-ld (hl), #'m'
-inc hl
-ld (hl), #'n'
-inc hl
-ld (hl), #'o'
-inc hl
-ld (hl), #'p'
-inc hl
-ld (hl), #'q'
-inc hl
-ld (hl), #'r'
-inc hl
-ld (hl), #'s'
-inc hl
-ld (hl), #'t'
-inc hl
-ld (hl), #'u'
-inc hl
-ld (hl), #'v'
-inc hl
-ld (hl), #'w'
-inc hl
-ld (hl), #'x'
-inc hl
-ld (hl), #'y'
-inc hl
-ld (hl), #'z'
-inc hl
+inc a
+djnz loop3
+
 ld a, #0
 out (#0), a
 di

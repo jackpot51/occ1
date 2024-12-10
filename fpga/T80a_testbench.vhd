@@ -38,6 +38,7 @@ architecture behavior of T80a_testbench is
     -- Col set to max value so it gets set to 0 on first clock pulse
     signal COL: unsigned(9 downto 0) := to_unsigned(511, 10);
     signal CHAR_ROW: std_logic_vector(3 downto 0) := (others => '0');
+    signal VRAM_ROW: std_logic_vector(4 downto 0) := (others => '0');
     signal VRAM_DATA: std_logic_vector(7 downto 0);
     signal CHAR_DATA: std_logic_vector(7 downto 0);
     signal VIDEO: std_logic := '0';
@@ -118,8 +119,7 @@ begin
         B_RD_n => '0',
         B_WR_n => '1',
         B_ADDR(6 downto 0) => std_logic_vector(COL(9 downto 3)),
-        --TODO: row / 10
-        B_ADDR(11 downto 7) => (others => '0'),
+        B_ADDR(11 downto 7) => VRAM_ROW(4 downto 0),
         B_ADDR(15 downto 12) => "1111",
         B_DATA => VRAM_DATA
     );
@@ -167,11 +167,13 @@ begin
                 COL <= (others => '0');
                 if (ROW >= 259) then
                     ROW <= (others => '0');
-                    CHAR_ROW <= "0000";
+                    CHAR_ROW <= (others => '0');
+                    VRAM_Row <= (others => '0');
                 else
                     ROW <= ROW + 1;
                     if (CHAR_ROW = "1001") then
-                        CHAR_ROW <= "0000";
+                        CHAR_ROW <= (others => '0');
+                        VRAM_ROW <= VRAM_ROW + 1;
                     else
                         CHAR_ROW <= CHAR_ROW + 1;
                     end if;
