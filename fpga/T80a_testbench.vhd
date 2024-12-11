@@ -125,15 +125,12 @@ begin
 
     -- Video
 
-    character_rom: entity work.rom
+    character_rom: entity work.rom_async
     generic map (
         g_ADDR_WIDTH => 11,
         g_MEM_IMG_FILENAME => "build/character_rom.txt"
     )
     port map (
-        --TODO: best clock?
-        CLK_n => not CLK_62ns,
-        RD_n => '0',
         ADDR(6 downto 0) => VRAM_DATA(6 downto 0),
         ADDR(10 downto 7) => CHAR_ROW,
         DATA => CHAR_DATA

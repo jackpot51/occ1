@@ -12,9 +12,10 @@ all: build/boot.txt build/character_rom.txt
 	$(GHDL) -a $(GHDL_ARGS) T80/T80a.vhd
 	$(GHDL) -a $(GHDL_ARGS) ram.vhd
 	$(GHDL) -a $(GHDL_ARGS) rom.vhd
+	$(GHDL) -a $(GHDL_ARGS) rom_async.vhd
 	$(GHDL) -a $(GHDL_ARGS) T80a_testbench.vhd
 	$(GHDL) -e $(GHDL_ARGS) T80a_testbench
-	$(GHDL) -r $(GHDL_ARGS) T80a_testbench --stop-time=20ms --vcd=build/T80a_testbench.vcd
+	$(GHDL) -r $(GHDL_ARGS) T80a_testbench --stop-time=100ms --vcd=build/T80a_testbench.vcd
 
 gtkwave:
 	gtkwave build/T80a_testbench.vcd
