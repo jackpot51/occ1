@@ -1,5 +1,10 @@
 ld hl, #0xF000
 ld (hl), #'A'
+
+di
+halt
+
+
 inc hl
 ld de, #0x0FFF
 loop_clear:

@@ -11,7 +11,7 @@ architecture behavior of T80a_testbench is
     -- Z80
     signal RESET_n: std_logic := '0';
     signal R800_mode: std_logic := '0';
-    signal CLK_N: std_logic := '0';
+    signal CLK_n: std_logic := '0';
     signal WAIT_n: std_logic := '1';
     signal INT_n: std_logic := '1';
     signal NMI_n: std_logic := '1';
@@ -33,10 +33,9 @@ architecture behavior of T80a_testbench is
     -- Video
     signal HSYNC: std_logic := '0';
     signal VSYNC: std_logic := '1';
-    -- Row set to max value so it gets set to 0 on first clock pulse
-    signal ROW: unsigned(8 downto 0) := to_unsigned(259, 9);
-    -- Col set to max value so it gets set to 0 on first clock pulse
-    signal COL: unsigned(9 downto 0) := to_unsigned(511, 10);
+    -- Starting X at 1 keeps it synced with clk_char, for unknown reasons
+    signal X: unsigned(9 downto 0) := to_unsigned(1, 10);
+    signal Y: unsigned(8 downto 0) := to_unsigned(0, 9);
     signal CHAR_ROW: std_logic_vector(3 downto 0) := (others => '0');
     signal VRAM_ROW: std_logic_vector(4 downto 0) := (others => '0');
     signal VRAM_DATA: std_logic_vector(7 downto 0);
@@ -115,10 +114,10 @@ begin
         A_ADDR => ADDR,
         A_DATA => DATA,
         --TODO: best clock to use?
-        B_CLK_n => CLK_62ns,
+        B_CLK_n => not CLK_62ns,
         B_RD_n => '0',
         B_WR_n => '1',
-        B_ADDR(6 downto 0) => std_logic_vector(COL(9 downto 3)),
+        B_ADDR(6 downto 0) => std_logic_vector(X(9 downto 3)),
         B_ADDR(11 downto 7) => VRAM_ROW(4 downto 0),
         B_ADDR(15 downto 12) => "1111",
         B_DATA => VRAM_DATA
@@ -145,17 +144,17 @@ begin
     begin
         if rising_edge(CLK_62ns) then
             CLK_DOT <= not CLK_DOT;
-            if (ROW < 20) then
+            if (Y < 20) then
                 VSYNC <= '0';
             else
                 VSYNC <= '1';
             end if;
-            if (COL < 256) then
+            if (X < 256) then
                 HSYNC <= '1';
             else
                 HSYNC <= '0';
             end if;
-            VIDEO <= CHAR_DATA(to_integer(7 - unsigned(COL(2 downto 0))));
+            VIDEO <= CHAR_DATA(to_integer(7 - unsigned(X(2 downto 0))));
         end if;
     end process;
 
@@ -163,14 +162,14 @@ begin
     video_pos: process(CLK_62ns)
     begin
         if falling_edge(CLK_62ns) then
-            if (COL >= 511) then
-                COL <= (others => '0');
-                if (ROW >= 259) then
-                    ROW <= (others => '0');
+            if (X >= 511) then
+                X <= (others => '0');
+                if (Y >= 259) then
+                    Y <= (others => '0');
                     CHAR_ROW <= (others => '0');
                     VRAM_Row <= (others => '0');
                 else
-                    ROW <= ROW + 1;
+                    Y <= Y + 1;
                     if (CHAR_ROW = "1001") then
                         CHAR_ROW <= (others => '0');
                         VRAM_ROW <= VRAM_ROW + 1;
@@ -179,7 +178,7 @@ begin
                     end if;
                 end if;
             else
-                COL <= COL + 1;
+                X <= X + 1;
             end if;
         end if;
     end process;
@@ -189,26 +188,6 @@ begin
     stdout: process (CLK_n)
     begin
         if rising_edge(CLK_n) then
-            if (MREQ_n = '0') then
-                -- if (RD_n = '0') then
-                --     report "MEM READ " &
-                --         to_hstring(ADDR) &
-                --         " = " &
-                --         to_hstring(DATA) &
-                --         " '" &
-                --         to_string(character'val(to_integer(unsigned(DATA)))) &
-                --         "'";
-                -- end if;
-                -- if (WR_n = '0') then
-                --     report "MEM WRITE " &
-                --         to_hstring(ADDR) &
-                --         " = " &
-                --         to_hstring(DATA) &
-                --         " '" &
-                --         to_string(character'val(to_integer(unsigned(DATA)))) &
-                --         "'";
-                -- end if;
-            end if;
             if (IORQ_n = '0') then
                 if (RD_n = '0') then
                     report "IO READ " &

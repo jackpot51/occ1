@@ -32,6 +32,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut row = 0;
     let mut col = 0;
     let mut video = false;
+    let mut images = Vec::new();
     for command_result in parser {
         //TODO: this ignores all parsing errors
         let Ok(command) = command_result else {
@@ -41,8 +42,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             vcd::Command::ChangeScalar(code, value) => {
                 if code == vsync_code {
                     if value == vcd::Value::V0 {
-                        row = 0;
-                        col = 0;
+                        if col > 0 || row > 0 {
+                            row = 0;
+                            col = 0;
+                            images.push(cosmic::widget::image::Handle::from_rgba(
+                                width as _,
+                                height as _,
+                                pixels.clone(),
+                            ));
+                        }
                     }
                 } else if code == hsync_code {
                     if value == vcd::Value::V1 {
@@ -71,11 +79,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             _ => {}
         }
     }
+    images.push(cosmic::widget::image::Handle::from_rgba(
+        width as _,
+        height as _,
+        pixels.clone(),
+    ));
 
-    cosmic::app::run::<app::App>(
-        Default::default(),
-        cosmic::widget::image::Handle::from_rgba(width as _, height as _, pixels),
-    )?;
+    cosmic::app::run::<app::App>(Default::default(), images)?;
 
     Ok(())
 }

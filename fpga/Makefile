@@ -14,10 +14,10 @@ all: build/boot.txt build/character_rom.txt
 	$(GHDL) -a $(GHDL_ARGS) rom.vhd
 	$(GHDL) -a $(GHDL_ARGS) T80a_testbench.vhd
 	$(GHDL) -e $(GHDL_ARGS) T80a_testbench
-	$(GHDL) -r $(GHDL_ARGS) T80a_testbench --stop-time=100ms --vcd=build/T80a_testbench.vcd
+	$(GHDL) -r $(GHDL_ARGS) T80a_testbench --stop-time=20ms --vcd=build/T80a_testbench.vcd
 
 gtkwave:
-	env -u WAYLAND_DISPLAY gtkwave build/T80a_testbench.vcd
+	gtkwave build/T80a_testbench.vcd
 
 view:
 	cargo run --release --manifest-path viewer/Cargo.toml -- build/T80a_testbench.vcd
