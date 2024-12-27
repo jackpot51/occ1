@@ -11,11 +11,15 @@ CC=sdcc \
 
 # For example, -debug
 #MAMEFLAGS?=-video bgfx -bgfx_screen_chains crt-geom-deluxe
+MAMEFLAGS?=-nounevenstretch
 
 # Single sided single density
 FORMAT=osb1sssd
 
 all: build/user.imd build/system.imd
+
+kermit:
+	sudo kermit -b 1200 -l /dev/ttyUSB0 -C "set flow-control none, set carrier-watch off"
 
 build/%.com: build/%.ihx
 	objcopy -Iihex -Obinary $< $@
