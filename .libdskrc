@@ -10,3 +10,12 @@ datarate = SD
 rwgap = 0x2a
 fmtgap = 0x52
 fm = Y
+
+[osborne1]
+description = Osborne 1 - SSDD
+cylinders = 40
+heads = 1
+secsize = 1024
+sectors = 5
+secbase = 1
+datarate = DD
