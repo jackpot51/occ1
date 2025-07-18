@@ -3,8 +3,12 @@
 # Optional I/O code is placed at 0x4000 (where bank 2 shadow starts)
 # Stack is placed at 0xC800
 
+#TODO: initializers are broke, merging code, const, and data into SEG did not work
 CC=sdcc \
 	-mz80 \
+	--codeseg SEG \
+	--constseg SEG \
+	--dataseg SEG \
 	--stack-loc 0xC800 \
 	--no-std-crt0 \
 	--sdcccall 1
@@ -14,12 +18,14 @@ CC=sdcc \
 MAMEFLAGS?=-nounevenstretch
 
 # Single sided single density
-FORMAT=osb1sssd
+#FORMAT=osb1sssd
+# Single sided double density
+FORMAT=osborne1
 
 all: build/user.imd build/system.imd
 
 kermit:
-	sudo kermit -b 1200 -l /dev/ttyUSB0 -C "set flow-control none, set carrier-watch off"
+	sudo kermit -l /dev/ttyUSB0 -C "set speed 1200, set flow-control none, set carrier-watch off"
 
 build/%.com: build/%.ihx
 	objcopy -Iihex -Obinary $< $@
@@ -48,22 +54,42 @@ build/image-middle.asm: occ1/res/occ1-right.jpg occ1/src/main.rs
 	mkdir -p build
 	cargo run --release --manifest-path occ1/Cargo.toml -- --new-algo --no-show $< $@ 22 18 0x16 17
 
-build/image-right.asm: occ1/res/osborne.png occ1/src/main.rs
-	mkdir -p build
-	cargo run --release --manifest-path occ1/Cargo.toml -- --new-algo --no-show $< $@ 22 27 0x16 34
+#build/image-right.asm: occ1/res/osborne.png occ1/src/main.rs
+#	mkdir -p build
+#	cargo run --release --manifest-path occ1/Cargo.toml -- --new-algo --no-show $< $@ 22 27 0x16 34
 
-build/image.ihx: image.c build/start.rel build/common.rel build/irq1.rel build/image-left.asm build/image-middle.asm build/image-right.asm
+build/image-right.asm: occ1/build/frame-24.png occ1/src/main.rs
 	mkdir -p build
-	$(CC) -Wl-b_IRQ1=0xC000 -o $@ build/start.rel build/common.rel $< build/irq1.rel
+	cargo run --release --manifest-path occ1/Cargo.toml -- --new-algo --no-show --zoom $< $@ 22 27 0x16
+
+#build/image-left.asm build/image-middle.asm 
+build/image.ihx: image.c build/start.rel build/common.rel build/irq1.rel build/image-right.asm
+	mkdir -p build
+	$(CC) -Wl-b_IRQ1=0x4000 -o $@ build/start.rel build/common.rel $< build/irq1.rel
+
+build/sw1.amv: res/sw1.txt asciimov/Cargo.toml asciimov/src/main.rs
+	mkdir -p build
+	cargo run --release --manifest-path asciimov/Cargo.toml -- $< $@
+
+build/asciimov.ihx: asciimov.c build/start.rel build/common.rel
+	mkdir -p build
+	$(CC) -o $@ build/start.rel build/common.rel $<
 
 build/rickroll.ihx: rickroll.c build/start.rel build/common.rel build/irq1.rel occ1/build/frame-*.asm
 	mkdir -p build
 	$(CC) -Wl-b_IRQ1=0xC000 -o $@ build/start.rel build/common.rel $< build/irq1.rel
 
-build/system.img: roms/osborne1/os1syss.td0
+#build/system.img: roms/osborne1/os1syss.td0
+#	mkdir -p build
+#	rm -f $@.partial
+#	env HOME=$(PWD) dsktrans -itype tele -format $(FORMAT) -otype raw $< $@.partial
+#	cpmrm -f $(FORMAT) $@.partial autost.com
+#	mv $@.partial $@
+
+build/system.img: roms/osborne1/O1CPM.IMD
 	mkdir -p build
 	rm -f $@.partial
-	env HOME=$(PWD) dsktrans -itype tele -format $(FORMAT) -otype raw $< $@.partial
+	env HOME=$(PWD) dsktrans -itype imd -format $(FORMAT) -otype raw $< $@.partial
 	cpmrm -f $(FORMAT) $@.partial autost.com
 	mv $@.partial $@
 
@@ -75,6 +101,14 @@ build/user.img: build/beep.com build/game.com build/image.com build/physics.com
 	cpmcp -f $(FORMAT) $@.partial $$file 0:$$(basename $$file); \
 	done
 	mv $@.partial $@
+
+build/flashfloppy.img: build/asciimov.com build/sw1.amv | build/system.img
+	cp -v build/system.img $@.partial
+	cpmrm -f $(FORMAT) $@.partial '*.com'
+	cpmcp -f $(FORMAT) $@.partial build/asciimov.com 0:autost.com
+	cpmcp -f $(FORMAT) $@.partial build/sw1.amv 0:sw1.amv
+	mv $@.partial $@
+
 
 build/%.img: build/%.com build/system.img
 	cp -v build/system.img $@.partial
