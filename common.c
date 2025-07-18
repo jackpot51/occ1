@@ -67,6 +67,21 @@ void screen_position(uint8_t x, uint8_t y) {
     putchar(x + 32);
 }
 
+int fopen(struct FCB * fcb) {
+    return (int)bdos(15, (uint16_t)fcb);
+}
+
+int fclose(struct FCB * fcb) {
+    return (int)bdos(16, (uint16_t)fcb);
+}
+
+int fread(struct FCB * fcb, uint8_t buf[128]) {
+    // Set DMA address
+    bdos(26, (uint16_t)buf);
+    // Read next record
+    return (int)bdos(20, (uint16_t)fcb);
+}
+
 void delay_loops(uint16_t loops) __naked __sdcccall(0) {
     // Use parameters
     loops;
