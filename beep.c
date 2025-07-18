@@ -40,7 +40,10 @@ void note(uint16_t half_period_loops, int32_t total_loops) {
     }
 }
 
-#define NOTE(hz, ms) note(((LOOPS_PER_S / hz) / 2L), ((LOOPS_PER_S * ms) / 1000L))
+#define NOTE(hz, ms)  { \
+    puts(#hz " \r"); \
+    note(((LOOPS_PER_S / hz) / 2L), ((LOOPS_PER_S * ms) / 1000L)); \
+}
 
 #define BPM 240L
 #define QUARTER (60000L / BPM)
