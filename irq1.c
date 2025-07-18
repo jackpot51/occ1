@@ -79,7 +79,7 @@ void irq1_handler(void) __naked {
         push de                 // 11 clocks
         push hl                 // 11 clocks
 
-        ld de, #196             // 10 clocks, WAS #196
+        ld de, #178             // 10 clocks, WAS #196
                                 // total non-loop: 77 clocks
 
 

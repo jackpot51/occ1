@@ -11,6 +11,7 @@ void memset_screen(char c) {
     memset(vram, c, ROWS * 128);
 }
 
+/*
 void left(void) __naked {
     __asm
     #include "build/image-left.asm"
@@ -24,6 +25,7 @@ void middle(void) __naked {
     jp _irq1_ret
     __endasm;
 }
+*/
 
 void right(void) __naked {
     __asm
@@ -59,7 +61,7 @@ void main(void) {
     cursor_position(0, 23);
     printf("0         1         2         3         4         5         6         7         8         9        10        11        12      ");
 
-    irq1_program = (uint16_t)left;
+    irq1_program = (uint16_t)right;
     irq1_override();
 
     uint16_t last_count = 0;
@@ -71,6 +73,7 @@ void main(void) {
         if (count != last_count) {
             last_count = count;
 
+            /*
             switch (count % 3) {
                 case 0:
                     irq1_program = (uint16_t)left;
@@ -82,6 +85,7 @@ void main(void) {
                     irq1_program = (uint16_t)right;
                     break;
             }
+            */
 
             // Panning for testing, at 10Hz
             /*

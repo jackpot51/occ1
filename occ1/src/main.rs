@@ -295,8 +295,15 @@ fn main() {
         }
 
         max_cycles = cmp::max(cycles, max_cycles);
-        while cycles < 256 {
-            let remaining = 256 - cycles;
+        let real_hardware = true;
+        let line_cycles = if real_hardware {
+            // 230 with delay loop 178 looks best so far
+            240
+        } else {
+            256
+        };
+        while cycles < line_cycles {
+            let remaining = line_cycles - cycles;
             if remaining >= 27 {
                 let align = remaining - 27;
                 if align % 4 == 0 {
@@ -315,11 +322,8 @@ fn main() {
                 } else if align >= 9 && align % 4 == 1 {
                     writeln!(asm, "ld a, i // cycles {}", cycles);
                     cycles += 9;
-                } else {
-                    eprintln!("{}", asm);
-                    panic!("cannot figure out nops for {} remaining cycles", align);
+                    continue;
                 }
-                continue;
             }
 
             // Could not use nop table, doing regular nops
@@ -342,9 +346,9 @@ fn main() {
         }
 
         writeln!(asm, "// total cycles {}", cycles);
-        if cycles != 256 {
+        if cycles != line_cycles {
             eprintln!("{}", asm);
-            panic!("total cycles not 256");
+            panic!("total cycles not {}", line_cycles);
         }
     }
 
