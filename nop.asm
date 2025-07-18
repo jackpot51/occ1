@@ -1,4 +1,6 @@
 ; nop table for optimizing image programs
+nop238:
+    nop ; 4 cycles
 nop234:
     nop ; 4 cycles
 nop230:
