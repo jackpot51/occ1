@@ -163,8 +163,9 @@ void main(void) {
                 while (byte >= STREAM_FRAMES) {
                     res = remaining();
                     if (res < DATA_FILL_STREAM) {
-                        //TODO: use result from fill?
-                        fill();
+                        if (fill() != 0) {
+                            break;
+                        }
                         res = remaining();
                         printf("%05d\r", res);
                         byte -= STREAM_FRAMES;
