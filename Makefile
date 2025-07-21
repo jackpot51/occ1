@@ -67,6 +67,10 @@ build/image.ihx: image.c build/start.rel build/common.rel build/irq1.rel build/i
 	mkdir -p build
 	$(CC) -Wl-b_IRQ1=0x4000 -o $@ build/start.rel build/common.rel $< build/irq1.rel
 
+build/keyboard.ihx: keyboard.c build/start.rel build/common.rel build/irq1.rel
+	mkdir -p build
+	$(CC) -Wl-b_IRQ1=0x4000 -o $@ build/start.rel build/common.rel $< build/irq1.rel
+
 build/sw1.amv: res/sw1.txt asciimov/Cargo.toml asciimov/src/main.rs
 	mkdir -p build
 	cargo run --release --manifest-path asciimov/Cargo.toml -- $< $@
